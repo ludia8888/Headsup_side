@@ -13,13 +13,13 @@
 | 서버 자동 검사 | **passed** | Node 검사 **20개**, 실패 0. GPT-Live 세션 JSON/비밀키 경계·위임 설정·최종 사용 초 수 소유권 검사 포함 |
 | TypeScript 검사·컴파일 | **passed** | `npm run typecheck`, `npm run build` |
 | iOS 앱 + 감지 확장 기능 | **passed** | Xcode 26.0, 시뮬레이터 SDK, iOS 최소 버전 17.4. 로컬 실행용 ad hoc 서명으로 빌드·설치. 실기기 서명 성공을 뜻하지 않음 |
-| 서버 프로세스 기동 | **passed** | 2026-09-30에 이전 프로세스를 새 코드로 교체. 실제 `/health` 응답에 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: false`, `automaticApproved: false` 확인. 서버 8787과 비공개 키 설정 화면 8788 실행. `.env` 접근 권한은 소유자 전용 `600`; OpenAI 키는 입력 대기 |
+| 서버 프로세스 기동·키 설정 | **passed** | 2026-09-30에 실제 `/health` 응답에서 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: true`, `automaticApproved: false` 확인. 비공개 설정 화면에서 두 모델의 조회 인증 성공을 확인. 서버 8787과 설정 화면 8788 실행. 키 파일 권한은 소유자 전용 `600`이며 Git에서 제외됨 |
 | 앱의 서버 등록·인증·수동 수신 | **passed** | 로컬 연결 요청 → Keychain 저장 → 앱 재실행 → 캐릭터 설정 동기화 → 실제 서버 수동 통화 요청 → 시뮬레이터 앱 안 수신 화면 확인. 해당 통화는 거절로 종료, 음성 연결 없음 |
 | 시뮬레이터 화면 표시 | **passed** | iPhone 17 Pro / iOS 26.0에서 실행. 캐릭터 선택, AI 홈, 시험 서버 연결 안내, 설정의 성격·목소리·재전화 안내를 실제 UI에서 확인 |
 | UI/UX 개편 v2 | **구현 / 부분 UI 검증 passed** | Character.AI·Nomi·러비더비의 현재 공개 화면을 검토. 전체 캐릭터 장면·보라빛 어두운 바탕·고정 전화 버튼·기억 목록·설정 묶음 적용. 홈/우리/기억 작성/설정 상단/성격 선택/개발용 앱 내부 수신 표시와 거절 후 복귀, 입력 취소, 큰 글자의 홈, SE 첫 설정 표시 확인. 개발용 수신 화면은 실제 음성·시스템 수신 성공이 아니며 대화/20분 동행의 실제 음성은 미확인 |
 | 실기기 Screen Time 집계 | **notProven** | 실제 iPhone의 독립 집계·휴식·날짜/한도 변경·권한 철회·웹사이트 영향은 시험하지 못함 |
 | 실기기 CallKit·PushKit 수신 | **notProven** | 일반 백그라운드/강제 종료/방해금지/수신 표시·지연 측정 필요. 시뮬레이터 화면은 실제 시스템 수신 성공이 아님 |
-| 실제 한국어 왕복 음성·20분 유지 | **notProven** | API 키를 사용한 실통화, 이어폰·잠금·끼어들기·긴 침묵·종료를 시험하지 못함. 목업 응답을 성공으로 세지 않음 |
+| 실제 한국어 왕복 음성·20분 유지 | **notProven** | API 키와 모델 조회 권한은 확인했으나 서버의 Live 세션 생성·실제 음성 연결 기록은 아직 없음. 이어폰·잠금·끼어들기·긴 침묵·종료도 미시험 |
 | Apple 외부 신호 허용 여부 | **blocked: 확인 미확보** | 최소 신호도 사용 시간에서 파생됨. 사용자 동의나 코드 작동으로 허용을 판단하지 않음. 문의 초안만 작성, 발송하지 않음 |
 | Family Controls 배포/TestFlight | **blocked: 권한 미확보** | 앱과 확장 기능의 배포 권한·프로비저닝·TestFlight 통합 시험이 필요. 신청·배포하지 않음 |
 | 사용자 행동 변화 | **notProven** | 실제 참여자의 수신율·앱 사용 중단·다음날 전화 의향 데이터 없음 |
@@ -40,11 +40,11 @@
 
 ## 실제 통화 준비와 승인 잠금
 
-UI 개편의 기준, 수정 내역, 실제 검토 범위와 화면은 [최신 v2 제작 기록](UI_REDESIGN_V2.md)에 별도로 남겼습니다. 수신/연결 중/대화/동행 상태를 구분해 표시하며, 개발용 앱 내부 수신 장면과 거절 후 복귀를 확인했습니다. 이 경로는 실제 수동 서버 요청을 사용하지만 시뮬레이터의 시스템 CallKit 수신을 건너뛰는 명시적 미리보기입니다. 키 입력 전이므로 실통화가 검증된 것은 아닙니다.
+UI 개편의 기준, 수정 내역, 실제 검토 범위와 화면은 [최신 v2 제작 기록](UI_REDESIGN_V2.md)에 별도로 남겼습니다. 수신/연결 중/대화/동행 상태를 구분해 표시하며, 개발용 앱 내부 수신 장면과 거절 후 복귀를 확인했습니다. 이 경로는 실제 수동 서버 요청을 사용하지만 시뮬레이터의 시스템 CallKit 수신을 건너뛰는 명시적 미리보기입니다. 키 인증 이후 최신 앱 빌드를 시뮬레이터에 다시 설치·실행했지만 새 Live 세션은 아직 생성되지 않았습니다.
 
-수동 통화 경로에는 실제 CallKit과 네이티브 WebRTC 코드가 있으며 서버가 GPT-Live의 SDP answer를 받아 연결합니다. `gpt-live-1`은 자연스러운 음성 대화, `gpt-6-luna`는 필요할 때 위임받은 기억·동행·연락 중단 작업을 맡습니다. 종료 시 Live가 확인해 준 사용 초 수만 기록하고, 확인이 없으면 확정하지 않습니다. 모형 AI 음성을 들려주거나 API 실패를 연결 성공으로 바꾸지 않습니다. 현재 실행 환경에는 OpenAI API 키/APNs 자격 증명을 설정하지 않았으므로 실통화가 이루어졌다고 보고하지 않습니다.
+수동 통화 경로에는 실제 CallKit과 네이티브 WebRTC 코드가 있으며 서버가 GPT-Live의 SDP answer를 받아 연결합니다. `gpt-live-1`은 자연스러운 음성 대화, `gpt-6-luna`는 필요할 때 위임받은 기억·동행·연락 중단 작업을 맡습니다. 종료 시 Live가 확인해 준 사용 초 수만 기록하고, 확인이 없으면 확정하지 않습니다. 모형 AI 음성을 들려주거나 API 실패를 연결 성공으로 바꾸지 않습니다. 현재 OpenAI 키는 설정됐으나 APNs 자격 증명과 실제 Live 음성 연결 검증은 없습니다.
 
-후속 요청에 맞춰 `server/scripts/configure-openai.mjs`와 [비공개 키 입력 화면](http://127.0.0.1:8788)을 추가했습니다. API 키는 채팅·명령 인자·소스 코드에 넣지 않고 입력창 또는 사용자가 지정한 키 파일로 받습니다. 이제 `gpt-live-1`과 `gpt-6-luna` 조회 접근을 확인한 뒤 `.env`에 원자적으로 저장하고 서버를 재시작합니다. 입력창의 키 값은 제출 직후 지우며 상태 응답과 로그에는 키 값을 포함하지 않습니다. 확인은 아직 실제 키로 수행하지 않았습니다.
+후속 요청에 맞춰 `server/scripts/configure-openai.mjs`와 [비공개 키 입력 화면](http://127.0.0.1:8788)을 추가했습니다. API 키는 채팅·명령 인자·소스 코드에 넣지 않고 입력창 또는 사용자가 지정한 키 파일로 받습니다. 실제 키로 `gpt-live-1`과 `gpt-6-luna`의 모델 조회 접근을 확인한 뒤 `.env`에 저장하고 서버를 재시작했습니다. 입력창의 키 값은 제출 직후 지우며 상태 응답과 로그에는 키 값을 포함하지 않습니다. 모델 조회 성공만으로 WebRTC 통화 성공을 판단하지 않습니다.
 
 실제 앱 연결 시험에서 서명 없는 시뮬레이터의 Keychain 오류 `-34018`을 발견했습니다. Xcode의 로컬 실행용 서명으로 다시 빌드·설치한 뒤 Keychain 저장과 재실행 후 인증 사용을 확인했습니다. 서명 방식 변경으로 기존 캐릭터·온보딩 설정이 다른 저장소로 바뀌지 않도록 시뮬레이터 저장 위치도 고정했습니다. iPhone은 기존의 서명된 App Group과 공유 Keychain을 사용합니다.
 
@@ -60,6 +60,6 @@ UI 개편의 기준, 수정 내역, 실제 검토 범위와 화면은 [최신 v2
 - [실기기 검증표](DEVICE_TEST_MATRIX.md): 승인 전 감지/수동 음성 시험과 승인 후 자동 시험을 구분.
 - [시뮬레이터 홈 캡처](evidence/home.png): 실제 실행 화면. 통화·행동 변화의 증거는 아님.
 
-현재 로컬 서버는 단일 프로세스 원형입니다. 공개 서버 배포, 실제 API 키 입력, Apple 계정 변경·문의 발송·권한 신청, TestFlight 배포는 수행하지 않았습니다. 사용자 실험에서 의미 있는 완료 판단은 실제 전화 수신과 음성 성공뿐 아니라 앱 사용 중단과 다음날 의향까지 확인한 뒤 내려야 합니다.
+현재 로컬 서버는 단일 프로세스 원형입니다. 공개 서버 배포, Apple 계정 변경·문의 발송·권한 신청, TestFlight 배포는 수행하지 않았습니다. 사용자 실험에서 의미 있는 완료 판단은 실제 전화 수신과 음성 성공뿐 아니라 앱 사용 중단과 다음날 의향까지 확인한 뒤 내려야 합니다.
 
 공식 참고: [Apple DeviceActivityEvent](https://developer.apple.com/documentation/deviceactivity/deviceactivityevent), [Apple VoIP 수신](https://developer.apple.com/documentation/pushkit/responding-to-voip-notifications-from-pushkit), [Apple 배포 권한](https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement), [Apple 약관](https://developer.apple.com/support/terms/apple-developer-program-license-agreement/), [GPT-Live WebRTC](https://developers.openai.com/api/docs/guides/voice-webrtc?api=live), [GPT-Live 위임·도구](https://developers.openai.com/api/docs/guides/live-delegation), [gpt-live-1](https://developers.openai.com/api/docs/models/gpt-live-1).
