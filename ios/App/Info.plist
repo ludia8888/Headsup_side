@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>CFBundleDisplayName</key><string>지민</string>
+    <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key><true/>
+    <key>UILaunchScreen</key><dict><key>UIColorName</key><string>LaunchBackground</string></dict>
+    <key>UIUserInterfaceStyle</key><string>Dark</string>
+    <key>CFBundleURLTypes</key><array><dict>
+        <key>CFBundleURLName</key><string>Local simulator setup</string>
+        <key>CFBundleURLSchemes</key><array><string>jimin-local</string></array>
+    </dict></array>
+    <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
+    <key>UIBackgroundModes</key><array><string>audio</string><string>voip</string></array>
+    <key>NSMicrophoneUsageDescription</key><string>지민과 한국어로 통화하려면 마이크가 필요해요. 통화할 때만 사용합니다.</string>
+    <key>NSVoIPUsageDescription</key><string>동의한 AI 음성 전화를 받고 통화를 이어가기 위해 사용합니다.</string>
+    <key>NSLocalNetworkUsageDescription</key><string>개발 중 같은 네트워크의 시험 서버에 연결하기 위해 사용합니다.</string>
+    <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+    <key>AutomationApproved</key><string>$(AUTOMATION_APPROVED)</string>
+    <key>AutoCallApprovalReference</key><string>$(AUTO_CALL_APPROVAL_REFERENCE)</string>
+    <key>KeychainGroup</key><string>$(AppIdentifierPrefix)com.jimin.mvp.shared</string>
+</dict></plist>
