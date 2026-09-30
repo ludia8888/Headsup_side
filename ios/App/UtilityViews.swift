@@ -24,10 +24,10 @@ struct ConnectionView: View {
                             dismiss()
                             Task { await model.calls.manualCall(simulatorPreview: true) }
                         } label: {
-                            Label("개발용 수신 화면 시험", systemImage: "phone.badge.waveform")
+                            Label("시뮬레이터 전화 받기 시험", systemImage: "phone.badge.waveform")
                                 .font(.subheadline).frame(minHeight: 44)
                         }.disabled(model.isWorking || model.calls.isBusy)
-                        Text("서버에 수동 통화를 요청해 화면만 확인해요. 실제 AI 음성 연결은 별도로 시험해야 해요.")
+                        Text("앱 안에 수신 화면을 띄워요. 받기를 누르면 실제 AI 음성 연결을 시도해요. 시스템 수신 화면은 iPhone에서 따로 시험해야 해요.")
                             .font(.caption).foregroundStyle(Palette.muted).lineSpacing(3)
                     }
                     #endif
@@ -252,14 +252,14 @@ struct DiagnosticsView: View {
                 }
                 #if DEBUG && targetEnvironment(simulator)
                 Section {
-                    Button("수신 화면만 시험하기") {
+                    Button("시뮬레이터 전화 받기 시험") {
                         dismiss()
                         Task { await model.calls.manualCall(simulatorPreview: true) }
                     }.disabled(!model.backendConnected || model.isWorking || model.calls.isBusy)
                 } header: {
                     Text("개발용 시뮬레이터 시험")
                 } footer: {
-                    Text("실제 서버에 수동 통화를 요청합니다. API 키가 없어도 수신 화면을 확인할 수 있지만, 실제 AI 음성 연결을 검증한 것은 아닙니다.")
+                    Text("실제 서버에 수동 통화를 요청합니다. 받기를 누르면 AI 음성 연결을 시도합니다. 시스템 CallKit 수신 화면은 실기기에서 따로 확인해야 합니다.")
                 }
                 #endif
                 Section("최근 감지") {

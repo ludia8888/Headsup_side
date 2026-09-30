@@ -88,7 +88,14 @@ import JiminCore
         }
         model.isWorking = true; defer { model.isWorking = false }
         model.stopPreview()
-        do { try await model.syncNow(); let call = try await BackendClient.manualCall(); receive(call, isVoIP: false, simulatorPreview: simulatorPreview) }
+        #if DEBUG && targetEnvironment(simulator)
+        // The Simulator may immediately end a locally reported CallKit call.
+        // Keep the real server and GPT-Live path, but present the incoming call in-app.
+        let useInAppReception = true
+        #else
+        let useInAppReception = simulatorPreview
+        #endif
+        do { try await model.syncNow(); let call = try await BackendClient.manualCall(); receive(call, isVoIP: false, simulatorPreview: useInAppReception) }
         catch { model.errorMessage = error.localizedDescription }
     }
     private func receive(_ envelope: CallEnvelope, isVoIP: Bool, simulatorPreview: Bool = false, completion: @escaping () -> Void = {}) {
@@ -127,7 +134,7 @@ import JiminCore
                 finish(.unanswered, reason: .unanswered); completion(); return
             }
             simulationFallback = true
-            simulatorNotice = "개발용 수동 요청 · 앱 내부 수신 화면\n시스템 전화 수신과 AI 음성 연결은 별도 시험이 필요해요."
+            simulatorNotice = "시뮬레이터 앱 내부 수신 화면\n받으면 실제 AI 음성 연결을 시도해요. 시스템 전화 수신은 iPhone에서 따로 확인해야 해요."
             activateRinging(envelope); completion(); return
         }
         #endif
