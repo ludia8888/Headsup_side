@@ -20,6 +20,7 @@ import os
     @Published var feedbackCallID: UUID?
     weak var model: AppModel?
     var isBusy: Bool { phase != .idle }
+    var shouldPresentCallScreen: Bool { isBusy && (simulationFallback || phase != .ringing) }
     private let provider: CXProvider
     private let logger = Logger(subsystem: "com.ludia8888.headsup.jimin", category: "CallKit")
     private let controller = CXCallController()

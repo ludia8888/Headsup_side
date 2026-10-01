@@ -27,7 +27,7 @@ struct RootView: View {
         }
         .foregroundStyle(Palette.ink).background(Palette.paper)
         .sheet(isPresented: $showConnection) { ConnectionView() }
-        .fullScreenCover(isPresented: Binding(get: { calls.isBusy }, set: { _ in })) { ActiveCallView().environmentObject(model) }
+        .fullScreenCover(isPresented: Binding(get: { calls.shouldPresentCallScreen }, set: { _ in })) { ActiveCallView().environmentObject(model) }
         .sheet(isPresented: Binding(get: { calls.feedbackCallID != nil && !calls.isBusy }, set: { if !$0 { calls.feedbackCallID = nil } })) {
             if let id = calls.feedbackCallID { FeedbackView(callID: id) }
         }
