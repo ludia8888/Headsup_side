@@ -13,7 +13,7 @@
 | 서버 자동 검사 | **passed** | Node 검사 **21개**, 실패 0. GPT-Live 세션 JSON/비밀키 경계·첫 질문 고정·최종 사용 초 수 소유권 검사 포함 |
 | TypeScript 검사·컴파일 | **passed** | `npm run typecheck`, `npm run build` |
 | iOS 앱 + 감지 확장 기능 | **passed** | Xcode 26.0, 시뮬레이터 SDK, iOS 최소 버전 17.4. 로컬 실행용 ad hoc 서명으로 빌드·설치. 실기기 서명 성공을 뜻하지 않음 |
-| iPhone 수동 통화 시험판 설치 | **passed / 음성 notProven** | 2026-10-01 연결된 iPhone 14 Pro / iOS 26.3에 `JiminManualDemo`를 Personal Team으로 서명·설치·실행. Family Controls·PushKit 등록·감지 확장 기능을 제외한 빌드이며, 실제 첫마디와 왕복 음성은 아직 확인 전 |
+| iPhone 수동 통화 시험판 설치·음성 | **passed / 시스템 수신 화면 notProven** | 2026-10-01 iPhone 14 Pro / iOS 26.3에 `JiminManualDemo`를 Personal Team으로 서명·재설치. 처음에는 CallKit 보고 직후 통화가 종료됐고, 시험판에 `voip` 백그라운드 모드를 추가해 재설치한 뒤 서버가 수락·`gpt-live-1` 세션 생성·음성 연결·정상 종료를 기록. 사용자가 iPhone에서 통화가 정상적으로 됐다고 확인. 시스템 전화 화면인지 앱 안 대체 화면인지는 아직 분리 확인 전 |
 | 서버 프로세스 기동·키 설정 | **passed** | 2026-10-01에 실제 `/health` 응답에서 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: true`, `pushConfigured: false`, `automaticApproved: false` 확인. 비공개 설정 화면에서 두 모델의 조회 인증 성공을 확인. 서버 8787 실행. 키 파일 권한은 소유자 전용 `600`이며 Git에서 제외됨 |
 | 앱의 서버 등록·인증·수동 수신 | **passed** | 로컬 연결 요청 → Keychain 저장 → 앱 재실행 → 캐릭터 설정 동기화 → 실제 서버 수동 통화 요청 → 시뮬레이터 앱 안 수신·받기 확인 |
 | 시뮬레이터 GPT-Live 신호 연결 | **passed** | 2026-10-01 진단 통화에서 서버 `sessionCreated: true`, WebRTC 연결과 `session.started` 뒤 `voiceConnectedAt` 기록, 정상 종료 확인. 소리가 실제로 들렸는지는 별도 |
@@ -22,7 +22,7 @@
 | UI/UX 개편 v2 | **구현 / 부분 UI 검증 passed** | Character.AI·Nomi·러비더비의 현재 공개 화면을 검토. 전체 캐릭터 장면·보라빛 어두운 바탕·고정 전화 버튼·기억 목록·설정 묶음 적용. 홈/우리/기억 작성/설정 상단/성격 선택/개발용 앱 내부 수신 표시와 거절 후 복귀, 입력 취소, 큰 글자의 홈, SE 첫 설정 표시 확인. 개발용 수신 화면은 실제 음성·시스템 수신 성공이 아니며 대화/20분 동행의 실제 음성은 미확인 |
 | 실기기 Screen Time 집계 | **notProven** | 실제 iPhone의 독립 집계·휴식·날짜/한도 변경·권한 철회·웹사이트 영향은 시험하지 못함 |
 | 실기기 CallKit·PushKit 수신 | **notProven** | 일반 백그라운드/강제 종료/방해금지/수신 표시·지연 측정 필요. 시뮬레이터 화면은 실제 시스템 수신 성공이 아님 |
-| 실제 한국어 왕복 음성·20분 유지 | **notProven** | 음성 세션 신호 연결은 확인했으나 스피커·마이크로 서로 들리는지는 직접 듣지 못함. 이어폰·잠금·끼어들기·긴 침묵·20분 유지도 미시험 |
+| 실제 한국어 왕복 음성·20분 유지 | **단기 통화 passed / 20분 notProven** | iPhone에서 시험 통화가 정상 동작했다고 사용자가 확인했고 서버에 수락·음성 연결·정상 종료가 남음. 이어폰·잠금·끼어들기·긴 침묵·20분 유지는 미시험 |
 | Apple 외부 신호 허용 여부 | **blocked: 확인 미확보** | 최소 신호도 사용 시간에서 파생됨. 사용자 동의나 코드 작동으로 허용을 판단하지 않음. 문의 초안만 작성, 발송하지 않음 |
 | Family Controls 배포/TestFlight | **blocked: 권한 미확보** | 앱과 확장 기능의 배포 권한·프로비저닝·TestFlight 통합 시험이 필요. 신청·배포하지 않음 |
 | 사용자 행동 변화 | **notProven** | 실제 참여자의 수신율·앱 사용 중단·다음날 전화 의향 데이터 없음 |

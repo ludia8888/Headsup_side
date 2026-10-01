@@ -5,6 +5,7 @@ import AVFoundation
 import WebRTC
 import FamilyControls
 import JiminCore
+import os
 
 // Both delegates are explicitly registered on .main. The imported ObjC protocols
 // predate Swift actors; this conformance asserts that queue contract at runtime.
@@ -20,6 +21,7 @@ import JiminCore
     weak var model: AppModel?
     var isBusy: Bool { phase != .idle }
     private let provider: CXProvider
+    private let logger = Logger(subsystem: "com.ludia8888.headsup.jimin", category: "CallKit")
     private let controller = CXCallController()
     private var registry: PKPushRegistry?
     private var pushToken: String?
@@ -162,6 +164,11 @@ import JiminCore
                         self.simulationFallback = true
                         self.simulatorNotice = "시뮬레이터의 앱 내부 수신 화면 · 시스템 전화 수신은 실기기에서 확인해 주세요"
                     } else { self.model?.errorMessage = error.localizedDescription; self.finish(.failed, reason: .failed); return }
+                    #elseif MANUAL_CALL_DEMO
+                    let failure = error as NSError
+                    self.logger.error("Manual incoming call rejected: domain=\(failure.domain, privacy: .public) code=\(failure.code)")
+                    self.simulationFallback = true
+                    self.simulatorNotice = "아이폰이 시스템 전화 화면을 열지 못했어요. 이 시험 통화는 앱 안에서 계속할게요. 받으면 실제 AI 음성을 연결해요."
                     #else
                     self.model?.errorMessage = "시스템에서 전화 표시를 허용하지 않았어요. 방해금지·서명·전화 설정을 확인해 주세요. \(error.localizedDescription)"
                     self.finish(.failed, reason: .failed); return
@@ -422,7 +429,9 @@ import JiminCore
     private func endBackgroundTask() {
         if backgroundTask != .invalid { UIApplication.shared.endBackgroundTask(backgroundTask); backgroundTask = .invalid }
     }
-    func providerDidReset(_ provider: CXProvider) { finish(.failed, reason: .failed) }
+    func providerDidReset(_ provider: CXProvider) {
+        if !simulationFallback { finish(.failed, reason: .failed) }
+    }
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) { beginAnswer(action) }
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         guard callID == action.callUUID else { action.fulfill(); return }

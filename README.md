@@ -101,12 +101,12 @@ xcodebuild -project Jimin.xcodeproj -scheme Jimin -configuration Debug \
 
 ## 개인 iPhone에서 먼저 수동 AI 통화 시험하기
 
-Xcode에 **Personal Team**만 보이면 원래 `Jimin` 빌드는 Family Controls와 Push Notifications 권한 때문에 설치용 서명을 만들 수 없습니다. 이때 `JiminManualDemo` 실행 대상을 사용합니다. 이 개발 빌드는 같은 AI 음성·CallKit 수신 경로를 사용하지만, 앱 사용 감지 확장 기능과 자동 전화를 제외하고 앱의 개인 저장 공간을 사용합니다. 화면에도 ‘수동 통화 시험판’이라고 표시합니다. 감지 권한이나 APNs 성공의 증거로 취급하지 마세요.
+Xcode에 **Personal Team**만 보이면 원래 `Jimin` 빌드는 Family Controls와 Push Notifications 권한 때문에 설치용 서명을 만들 수 없습니다. 이때 `JiminManualDemo` 실행 대상을 사용합니다. 이 개발 빌드는 같은 AI 음성·CallKit 수신 경로를 사용하지만, 앱 사용 감지 확장 기능과 자동 전화를 제외하고 앱의 개인 저장 공간을 사용합니다. 시스템이 CallKit 수신 표시를 거부하면 이유를 기기 로그에 남기고 앱 안의 수신 화면으로 수동 통화를 이어갑니다. 화면에도 ‘수동 통화 시험판’이라고 표시합니다. 감지 권한이나 APNs 성공의 증거로 취급하지 마세요.
 
 1. iPhone 잠금을 풀고 케이블로 Mac에 연결해 ‘이 컴퓨터를 신뢰’를 허용합니다. Xcode → 설정 → Apple Accounts에서 본인 계정으로 로그인합니다. Xcode에서 `ios/Jimin.xcodeproj`를 열고 실행 대상으로 `JiminManualDemo`와 연결된 iPhone을 고릅니다. `Signing & Capabilities`에서 자신의 Team을 선택하고 ▶︎ 실행합니다. 처음 열 때 iPhone이 개발자 앱 신뢰를 요청하면 iPhone 설정 → 일반 → VPN 및 기기 관리에서 해당 개발자를 신뢰합니다.
 2. Mac의 OpenAI 시험 서버를 켜고 `/health`에서 `voiceConfigured: true`를 확인합니다. iPhone은 Mac의 `127.0.0.1`에 접속할 수 없으므로, HTTPS로 접근 가능한 시험 주소를 준비해야 합니다. Mac에 ngrok가 설정되어 있다면 `ngrok http 8787 --inspect=false`로 임시 HTTPS 주소를 만들 수 있습니다. **주소가 공개될 수 있으므로 연결 코드를 공유하지 말고, 시험이 끝나면 터널을 종료하세요.** Mac 서버와 터널이 둘 다 켜져 있어야 통화됩니다.
 3. iPhone 앱에서 캐릭터를 고르고, 사용 시간 감지 단계는 건너뛰고, 마이크를 허용합니다. 마지막 단계의 ‘통화 연결 준비하기’ 또는 홈의 ‘통화 연결하기’에서 HTTPS 서버 주소와 Mac의 `server/.env`에 있는 `REGISTRATION_CODE`를 입력합니다. **OpenAI API 키를 iPhone에 입력하지 않습니다.** 연결됨이 표시되면 ‘대화하기’ → ‘받기’로 시험합니다.
-4. 수신 화면이 보였는지, AI 첫 질문이 실제로 들렸는지, 내 말을 이해해 답했는지를 각각 확인합니다. 서버 연결과 시스템 수신 화면, 실제 양방향 음성은 서로 다른 단계입니다. 터널 주소가 바뀌면 앱의 ‘설정 → 통화 연결’에서 새 주소로 다시 연결해야 합니다.
+4. 수신 화면이 **iPhone의 시스템 전화 화면인지 앱 안의 화면인지**, AI 첫 질문이 실제로 들렸는지, 내 말을 이해해 답했는지를 각각 확인합니다. 서버 연결과 시스템 수신 화면, 실제 양방향 음성은 서로 다른 단계입니다. 터널 주소가 바뀌면 앱의 ‘설정 → 통화 연결’에서 새 주소로 다시 연결해야 합니다.
 
 Personal Team의 개발용 프로비저닝은 주기적으로 만료되어 재설치가 필요할 수 있습니다. 정확한 기한과 제한은 [Apple의 계정 안내](https://developer.apple.com/help/account/basics/about-your-developer-account/)를 확인하세요. 정식 자동 전화 시험은 별도의 Apple Developer Program 팀, Family Controls 권한, APNs 구성, 사용 시간 파생 신호의 허용 확인이 필요합니다.
 
