@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { generateKeyPairSync, randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createAPI } from "../src/api.js";
 import { defaultProfile, type Config, type Providers, type Call } from "../src/types.js";
 import { Store } from "../src/store.js";
@@ -11,7 +14,7 @@ import type { ConversationPlan } from "../src/conversation.js";
 const configuration = (): Config => ({ registrationCode: "test-code-very-long-and-private", openaiApiKey: "", liveModel: "gpt-live-1", backendModel: "gpt-6-luna",
   automaticApproved: false, appleApprovalReference: "", apns: { keyPath: "", keyId: "", teamId: "", bundleId: "com.jimin.mvp", environment: "sandbox" } });
 
-async function fixture(overrides: Partial<Config> = {}, injected?: Partial<Providers>) {
+async function fixture(overrides: Partial<Config> = {}, injected?: Partial<Providers>, pushTestDelayMs = 8_000) {
   let now = new Date("2026-09-29T10:00:00.000Z");
   const pushed: Call[] = []; const sessions: { profile: ReturnType<typeof defaultProfile>; offer: string; conversation?: ConversationPlan }[] = [];
   const p: Providers = {
@@ -20,7 +23,7 @@ async function fixture(overrides: Partial<Config> = {}, injected?: Partial<Provi
     preview: async () => new Uint8Array([1, 2]), ...injected
   };
   const config = { ...configuration(), ...overrides };
-  const { server, store, expire } = createAPI(config, p, new Store(), () => now);
+  const { server, store, expire } = createAPI(config, p, new Store(), () => now, pushTestDelayMs);
   await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
   const address = server.address(); assert.ok(address && typeof address === "object"); const base = `http://127.0.0.1:${address.port}`;
   const request = async (path: string, payload?: unknown, token?: string, method = "POST", extra: Record<string, string> = {}) => {
@@ -33,7 +36,7 @@ async function fixture(overrides: Partial<Config> = {}, injected?: Partial<Provi
   };
   const close = async () => { server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve())); };
   return { request, register, close, pushed, sessions, store, expire, setTime: (date: string) => { now = new Date(date); },
-    callBody: (mode: "manual" | "automatic" = "manual", requestId = randomUUID()) => ({ requestId, mode, createdAt: now.toISOString() }) };
+    callBody: (mode: "manual" | "testPush" | "automatic" = "manual", requestId = randomUUID()) => ({ requestId, mode, createdAt: now.toISOString() }) };
 }
 
 test("pairing and ownership protect all call/session routes", async () => {
@@ -52,6 +55,43 @@ test("automatic gate rejects even a minimal signal and never pushes", async () =
     assert.equal(r.status, 403); assert.equal((await r.json() as { error: string }).error, "apple_approval_pending");
     assert.equal(f.pushed.length, 0); assert.equal(Object.keys(f.store.state.calls).length, 0);
   } finally { await f.close(); }
+});
+test("explicit sandbox push test requires a registered VoIP token and does not unlock automatic calls", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "jimin-push-test-"));
+  const keyPath = join(directory, "test.p8");
+  const { privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  writeFileSync(keyPath, privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+  const apns = { keyPath, keyId: "ABCDE12345", teamId: "TEAM123456",
+    bundleId: "com.jimin.mvp", environment: "sandbox" as const };
+  const f = await fixture({ apns }, undefined, 5);
+  try {
+    const d = await f.register();
+    assert.equal((await f.request("/v1/calls", f.callBody("testPush"), d.token)).status, 409);
+    assert.equal((await f.request("/v1/device/push", { token: "a".repeat(64), environment: "sandbox" }, d.token, "PUT")).status, 200);
+    const body = f.callBody("testPush");
+    const response = await f.request("/v1/calls", body, d.token);
+    assert.equal(response.status, 201);
+    assert.equal((await response.json() as { delivery: string }).delivery, "push");
+    await new Promise(resolve => setTimeout(resolve, 25));
+    assert.deepEqual(f.pushed.map(c => c.id), [body.requestId]);
+    assert.equal((await f.request("/v1/calls", f.callBody("automatic"), d.token)).status, 403);
+  } finally { await f.close(); rmSync(directory, { recursive: true, force: true }); }
+});
+test("APNs health verifies a readable P-256 key, not just nonempty settings", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "jimin-apns-"));
+  const keyPath = join(directory, "test.p8");
+  const { privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  writeFileSync(keyPath, privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+  const config = configuration(); config.apns = { keyPath, keyId: "ABCDE12345", teamId: "TEAM123456",
+    bundleId: "com.jimin.mvp", environment: "sandbox" };
+  const f = await fixture({ apns: config.apns });
+  try {
+    const healthy = await f.request("/health", undefined, undefined, "GET");
+    assert.equal((await healthy.json() as { pushConfigured: boolean }).pushConfigured, true);
+    rmSync(keyPath);
+    const missingKey = await f.request("/health", undefined, undefined, "GET");
+    assert.equal((await missingKey.json() as { pushConfigured: boolean }).pushConfigured, false);
+  } finally { await f.close(); rmSync(directory, { recursive: true, force: true }); }
 });
 test("manual calls do not require APNs and session creation needs answer", async () => {
   const f = await fixture(); try {

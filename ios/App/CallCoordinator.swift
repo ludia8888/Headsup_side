@@ -45,6 +45,8 @@ import os
     private var handledTools = Set<String>()
     private struct LiveTool { let id: String; let name: String; let args: [String: Any] }
     private var pendingTools: [String: [LiveTool]] = [:]
+    private let testPushIDKey = "jimin.pendingPushTestID"
+    private let testPushUntilKey = "jimin.pendingPushTestUntil"
 
     override private init() {
         let config = CXProviderConfiguration()
@@ -104,14 +106,45 @@ import os
         do { try await model.syncNow(); let call = try await BackendClient.manualCall(); receive(call, isVoIP: false, simulatorPreview: useInAppReception) }
         catch { model.errorMessage = error.localizedDescription }
     }
-    private func receive(_ envelope: CallEnvelope, isVoIP: Bool, simulatorPreview: Bool = false, completion: @escaping () -> Void = {}) {
+    #if DEBUG
+    func requestPushTest() async -> Bool {
+        guard !isBusy, let model else { return false }
+        guard AVAudioApplication.shared.recordPermission == .granted else {
+            await model.requestConversationPermissions()
+            guard AVAudioApplication.shared.recordPermission == .granted else { return false }
+            return await requestPushTest()
+        }
+        model.errorMessage = nil; model.isWorking = true
+        defer { model.isWorking = false }
+        let id = UUID()
+        UserDefaults.standard.set(id.uuidString, forKey: testPushIDKey)
+        UserDefaults.standard.set(Date().addingTimeInterval(50), forKey: testPushUntilKey)
+        do {
+            try await model.syncNow()
+            _ = try await BackendClient.testPushCall(id)
+            return true
+        } catch {
+            UserDefaults.standard.removeObject(forKey: testPushIDKey)
+            UserDefaults.standard.removeObject(forKey: testPushUntilKey)
+            model.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+    #endif
+    private func receive(_ envelope: CallEnvelope, isVoIP: Bool, explicitPushTest: Bool = false, simulatorPreview: Bool = false, completion: @escaping () -> Void = {}) {
         let id = envelope.id
         let update = CXCallUpdate(); update.remoteHandle = CXHandle(type: .generic, value: envelope.displayName)
         update.localizedCallerName = envelope.displayName; update.hasVideo = false
         let duplicate = callID == id
         let otherCall = isBusy && !duplicate
         let localPolicyAllowsPush: Bool
-        if isVoIP, let state = try? SharedResources.store().read() {
+        if isVoIP && explicitPushTest {
+            #if DEBUG
+            localPolicyAllowsPush = true
+            #else
+            localPolicyAllowsPush = false
+            #endif
+        } else if isVoIP, let state = try? SharedResources.store().read() {
             localPolicyAllowsPush = SharedResources.automaticDispatchApproved && state.preferences.onboardingComplete &&
                 state.preferences.proactiveEnabled && state.preferences.pausedDay != InterventionPolicy.dayKey(Date()) &&
                 AuthorizationCenter.shared.authorizationStatus == .approved
@@ -458,9 +491,21 @@ import os
         let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let createdAt = (call?["createdAt"] as? String).flatMap { formatter.date(from: $0) } ?? Date.distantPast
         let expiresAt = (call?["expiresAt"] as? String).flatMap { formatter.date(from: $0) } ?? Date.distantPast
+        let testPush: Bool
+        #if DEBUG
+        testPush = call?["mode"] as? String == "testPush" &&
+            UserDefaults.standard.string(forKey: testPushIDKey) == id.uuidString &&
+            (UserDefaults.standard.object(forKey: testPushUntilKey) as? Date ?? .distantPast) > Date()
+        if testPush {
+            UserDefaults.standard.removeObject(forKey: testPushIDKey)
+            UserDefaults.standard.removeObject(forKey: testPushUntilKey)
+        }
+        #else
+        testPush = false
+        #endif
         let envelope = CallEnvelope(id: id, displayName: call?["displayName"] as? String ?? "AI 전화",
             createdAt: createdAt, expiresAt: expiresAt, status: "requested", delivery: "push", character: nil,
             openingCue: nil, instructions: nil)
-        receive(envelope, isVoIP: true, completion: completion)
+        receive(envelope, isVoIP: true, explicitPushTest: testPush, completion: completion)
     }
 }

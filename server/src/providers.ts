@@ -7,13 +7,23 @@ import { sessionConfig } from "./prompt.js";
 export class ProviderError extends Error {
   constructor(public readonly code: string) { super(code); }
 }
+export function apnsConfigured(config: Config): boolean {
+  const { keyPath, keyId, teamId, bundleId, environment } = config.apns;
+  if (!keyPath || !/^[A-Z0-9]{10}$/.test(keyId) || !/^[A-Z0-9]{10}$/.test(teamId) ||
+      !/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/.test(bundleId) ||
+      (environment !== "sandbox" && environment !== "production")) return false;
+  try {
+    const key = createPrivateKey(readFileSync(keyPath));
+    return key.asymmetricKeyType === "ec" && key.asymmetricKeyDetails?.namedCurve === "prime256v1";
+  } catch { return false; }
+}
 export function providers(config: Config, request: typeof fetch = fetch): Providers {
   let jwt: { token: string; madeAt: number } | undefined;
   const authorization = () => {
     const now = Math.floor(Date.now() / 1000);
     if (jwt && now - jwt.madeAt < 50 * 60) return jwt.token;
     const a = config.apns;
-    if (!a.keyPath || !a.teamId || !a.keyId) throw new ProviderError("apns_not_configured");
+    if (!apnsConfigured(config)) throw new ProviderError("apns_not_configured");
     const header = Buffer.from(JSON.stringify({ alg: "ES256", kid: a.keyId })).toString("base64url");
     const payload = Buffer.from(JSON.stringify({ iss: a.teamId, iat: now })).toString("base64url");
     const unsigned = `${header}.${payload}`;
@@ -63,13 +73,25 @@ export function providers(config: Config, request: typeof fetch = fetch): Provid
           "apns-expiration": String(Math.floor(new Date(call.expiresAt).getTime() / 1000))
         });
         let status = 0;
+        const responseChunks: Buffer[] = [];
         request.on("response", h => { status = Number(h[":status"]); });
-        request.on("data", () => {});
+        request.on("data", chunk => {
+          if (Buffer.concat(responseChunks).length < 4_096) responseChunks.push(Buffer.from(chunk));
+        });
         request.on("error", () => finish(new ProviderError("apns_request_failed")));
-        request.on("end", () => finish(status === 200 ? undefined : new ProviderError(`apns_http_${status}`)));
+        request.on("end", () => {
+          if (status === 200) { finish(); return; }
+          const parsed = (() => {
+            try { return JSON.parse(Buffer.concat(responseChunks).toString("utf8")) as { reason?: unknown }; }
+            catch { return null; }
+          })();
+          const reason = typeof parsed?.reason === "string" && /^[A-Za-z0-9]{1,80}$/.test(parsed.reason) ? parsed.reason : undefined;
+          console.error("APNs rejected a call", JSON.stringify({ status, reason }));
+          finish(new ProviderError(`apns_http_${status}`));
+        });
         request.end(JSON.stringify({ aps: { "content-available": 1 }, call: {
           id: call.id, displayName: call.profile?.character.name ?? "지민",
-          createdAt: call.requestedAt, expiresAt: call.expiresAt
+          createdAt: call.requestedAt, expiresAt: call.expiresAt, mode: call.mode
         } }));
       });
     },

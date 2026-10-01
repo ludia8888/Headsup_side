@@ -1,6 +1,6 @@
 # 실기기·TestFlight 검증표
 
-판정 값: **passed / failed / blocked / notProven**. 실제 증거가 없으면 notProven으로 둡니다. 수동 실기기 통화는 확인했습니다. 2026-10-01 전체 앱의 실기기 서명 재시도는 Personal Team의 Family Controls·Push Notifications 미지원으로 실패했고, 서버의 APNs와 자동 전송 승인도 꺼져 있습니다. 앱 사용 감지·자동 수신·배포 경로는 **blocked**입니다.
+판정 값: **passed / failed / blocked / notProven**. 실제 증거가 없으면 notProven으로 둡니다. 수동 실기기 통화는 확인했습니다. 2026-10-01 Ongleam Inc. 개발자 팀으로 **별도 앱** `com.jimin.mvp`와 감지 확장 기능 `com.jimin.mvp.monitor`를 iPhone 14 Pro용으로 서명·빌드하고 설치·실행했습니다. 두 바이너리의 Family Controls·App Group 권한과 앱의 개발용 Push Notifications 권한을 확인했습니다. 지민 전용 APNs Sandbox 키와 서버 설정도 준비했지만 실제 VoIP 토큰·푸시 수신은 **notProven**입니다. Screen Time 권한 허용과 실제 임계치 도달은 아직 **notProven**이고, Apple의 외부 신호 허용 답변 전에는 자동 전송을 잠가 둡니다.
 
 시험 기록에는 앱/서버 버전, iPhone 모델·iOS 버전·시간대, 앱/확장 기능 서명, 마이크/Screen Time 권한, APNs 환경, 연결망, 관찰 시각을 적습니다. 앱 토큰이나 원본 사용 보고서를 수집하지 않습니다.
 
@@ -24,6 +24,7 @@
 |---|---|---|
 | 시뮬레이터 수동 시험 | 홈 ‘대화하기’ → 앱 안 수신 화면 → ‘받기’ → GPT-Live 세션 생성·WebRTC `session.started` 기록. 실제 왕복 소리는 별도 확인 | 신호 연결 passed, 실제 소리 notProven |
 | 실기기 수동 전경 시험 | `JiminManualDemo` 설치·실행 후 사용자 요청 → 수신 화면 → 실제 왕복 음성. APNs 없이 시험 | 설치·실행·사용자 확인 음성 passed. 수정 후 받기 전 iPhone 상단 시스템 전화 알림만 표시되고, 수락 후 앱 통화 화면과 음성이 이어짐을 사용자 확인. 잠금 화면/백그라운드/강제 종료 수신 notProven |
+| 실기기 명시적 APNs 시험 | 앱 ‘통화 연결’의 ‘잠금 화면 전화 시험’ → 8초 안에 기기 잠금 → Sandbox APNs → PushKit → CallKit → GPT-Live 왕복 음성. 사용 시간 정보는 전송하지 않음 | 코드·서명·설치 passed, 실제 토큰 등록·APNs 도착·잠금 화면 표시·음성 notProven |
 | 일반 백그라운드 자동 수신 | 임계치 → 최소 신호 → APNs → CallKit을 순서별로 기록 | blocked |
 | 앱 강제 종료 상태 | 일반 백그라운드와 별도 측정. 도착하지 않으면 실패로 기록 | blocked |
 | 두 앱이 거의 동시에 한도 초과 | 한 통화만 진행. 추가 이벤트를 나중에 몰아서 전화하지 않음 | blocked |

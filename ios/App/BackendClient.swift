@@ -58,6 +58,10 @@ enum BackendClient {
         let data = try await request("v1/calls", body: ["requestId": UUID().uuidString, "mode": "manual", "createdAt": ISO8601DateFormatter().string(from: Date())])
         return try decoder.decode(CallEnvelope.self, from: data)
     }
+    static func testPushCall(_ id: UUID) async throws -> CallEnvelope {
+        let data = try await request("v1/calls", body: ["requestId": id.uuidString, "mode": "testPush", "createdAt": ISO8601DateFormatter().string(from: Date())])
+        return try decoder.decode(CallEnvelope.self, from: data)
+    }
     static func call(_ id: UUID) async throws -> CallEnvelope {
         try decoder.decode(CallEnvelope.self, from: await request("v1/calls/\(id.uuidString)", method: "GET"))
     }
@@ -89,6 +93,8 @@ enum BackendClient {
                 "pairing_code_invalid": "연결 코드가 맞지 않아요. 서버의 연결 코드를 확인해 주세요.",
                 "authentication_required": "서버 연결이 만료되었어요. 다시 연결해 주세요.",
                 "apple_approval_pending": "Apple의 허용 여부가 확인되기 전에는 자동 전화를 보낼 수 없어요.",
+                "voip_device_not_registered": "이 iPhone의 전화 수신 등록이 아직 완료되지 않았어요. 통화 연결을 다시 확인해 주세요.",
+                "push_test_sandbox_only": "잠금 화면 시험은 개발용 iPhone 빌드에서만 할 수 있어요.",
                 "already_in_call": "이미 진행 중인 전화가 있어요. 먼저 통화를 끝내 주세요.",
                 "stale_request": "너무 오래된 전화 요청이라 취소했어요.",
                 "rate_limited": "잠깐 쉬었다가 다시 시도해 주세요."]

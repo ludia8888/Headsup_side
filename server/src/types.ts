@@ -13,7 +13,7 @@ export interface Device {
   recentConversationIds?: string[];
 }
 export interface Call {
-  id: string; deviceId: string; mode: "manual" | "automatic"; status: CallStatus;
+  id: string; deviceId: string; mode: "manual" | "testPush" | "automatic"; status: CallStatus;
   requestedAt: string; receivedAt: string; expiresAt: string;
   displayName: string;
   answeredAt?: string; voiceConnectedAt?: string; endedAt?: string;

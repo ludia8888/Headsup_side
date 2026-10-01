@@ -3,13 +3,13 @@ import { randomUUID, randomBytes, createHash, timingSafeEqual } from "node:crypt
 import { Store } from "./store.js";
 import { type Config, type Providers, type Device, type Call, type CallStatus, defaultProfile, terminal } from "./types.js";
 import { HTTPError, record, only, string, uuid, date, parseProfile } from "./validation.js";
-import { ProviderError } from "./providers.js";
+import { apnsConfigured, ProviderError } from "./providers.js";
 import { liveInstructions } from "./prompt.js";
 import { chooseConversation, nextConversationHistory } from "./conversation.js";
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 const equal = (a: string, b: string) => timingSafeEqual(Buffer.from(hash(a), "hex"), Buffer.from(hash(b), "hex"));
-export function createAPI(config: Config, upstream: Providers, store = new Store(config.dataFile), clock: () => Date = () => new Date()) {
+export function createAPI(config: Config, upstream: Providers, store = new Store(config.dataFile), clock: () => Date = () => new Date(), pushTestDelayMs = 8_000) {
   const rates = new Map<string, { count: number; reset: number }>();
   const previews = new Set<string>();
   const limit = (key: string, max: number) => {
@@ -69,7 +69,7 @@ export function createAPI(config: Config, upstream: Providers, store = new Store
       const method = request.method;
       if (path === "/health" && method === "GET") {
         json(response, 200, { ok: true, model: config.liveModel, backendModel: config.backendModel, voiceConfigured: Boolean(config.openaiApiKey),
-          pushConfigured: Boolean(config.apns.keyPath && config.apns.keyId && config.apns.teamId),
+          pushConfigured: apnsConfigured(config),
           automaticApproved: config.automaticApproved && config.appleApprovalReference.trim().length > 4 }); return;
       }
       if (path === "/v1/devices" && method === "POST") {
@@ -116,7 +116,7 @@ export function createAPI(config: Config, upstream: Providers, store = new Store
         limit(`call:${device.id}`, 6);
         const o = record(await body(request)); only(o, ["requestId", "mode", "createdAt"]);
         const id = uuid(o.requestId); const createdAt = date(o.createdAt);
-        if (o.mode !== "manual" && o.mode !== "automatic") throw new HTTPError(400, "invalid_call_mode");
+        if (o.mode !== "manual" && o.mode !== "testPush" && o.mode !== "automatic") throw new HTTPError(400, "invalid_call_mode");
         const existing = store.state.calls[id];
         if (existing) { if (existing.deviceId !== device.id) throw new HTTPError(404, "call_not_found"); json(response, 200, envelope(existing)); return; }
         const age = clock().getTime() - Date.parse(createdAt);
@@ -126,15 +126,31 @@ export function createAPI(config: Config, upstream: Providers, store = new Store
           const day = new Intl.DateTimeFormat("en-CA", { timeZone: device.profile.timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(clock());
           if (!device.profile.proactiveEnabled || device.profile.pausedDay === day) throw new HTTPError(409, "automatic_paused");
         }
+        if (o.mode === "testPush") {
+          // Explicit device-initiated sandbox call. It has no Screen Time input and
+          // cannot enable the automatic-call path while Apple review is pending.
+          if (config.apns.environment !== "sandbox") throw new HTTPError(403, "push_test_sandbox_only");
+          if (!apnsConfigured(config) || !device.voipToken || device.pushEnvironment !== "sandbox") {
+            throw new HTTPError(409, "voip_device_not_registered");
+          }
+          limit(`push-test:${device.id}`, 2);
+        }
         if (Object.values(store.state.calls).some(c => c.deviceId === device.id && !terminal(c.status))) throw new HTTPError(409, "already_in_call");
         const call: Call = { id, deviceId: device.id, mode: o.mode, status: "requested", displayName: device.profile.character.name,
-          requestedAt: new Date(createdAt).toISOString(), receivedAt: clock().toISOString(), expiresAt: new Date(clock().getTime() + 30_000).toISOString(),
+          requestedAt: new Date(createdAt).toISOString(), receivedAt: clock().toISOString(),
+          expiresAt: new Date(clock().getTime() + (o.mode === "testPush" ? 45_000 : 30_000)).toISOString(),
           profile: structuredClone(device.profile), conversation: chooseConversation(device.recentConversationIds) };
         device.recentConversationIds = nextConversationHistory(device.recentConversationIds ?? [], call.conversation!);
         store.state.calls[id] = call; store.save();
         if (call.mode === "automatic") {
           try { await upstream.push(device, call); }
           catch (error) { end(call, "failed"); throw error; }
+        } else if (call.mode === "testPush") {
+          // Give the tester time to lock the phone before the real incoming call.
+          setTimeout(() => {
+            if (call.status !== "requested") return;
+            void upstream.push(device, call).catch(() => end(call, "failed"));
+          }, pushTestDelayMs).unref();
         }
         json(response, 201, envelope(call)); return;
       }

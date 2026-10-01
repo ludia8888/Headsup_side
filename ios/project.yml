@@ -38,6 +38,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.jimin.mvp
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_ENTITLEMENTS: App/Jimin.entitlements
+        DEVELOPMENT_TEAM: T79VA9MAUX
     dependencies:
       - package: JiminCore
       - package: WebRTC
@@ -52,6 +53,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.jimin.mvp.monitor
         INFOPLIST_FILE: MonitorExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: MonitorExtension/JiminMonitor.entitlements
+        DEVELOPMENT_TEAM: T79VA9MAUX
         APPLICATION_EXTENSION_API_ONLY: YES
     dependencies:
       - package: JiminCore

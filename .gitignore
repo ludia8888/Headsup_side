@@ -8,6 +8,7 @@ dist/
 .swiftpm/
 DerivedData/
 DerivedData-device/
+.derivedData/
 *.xcuserstate
 xcuserdata/
 server/data/

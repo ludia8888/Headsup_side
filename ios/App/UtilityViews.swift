@@ -8,6 +8,7 @@ struct ConnectionView: View {
     @State private var code = ""
     @State private var advanced = false
     @State private var deleting = false
+    @State private var pushTestScheduled = false
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -28,6 +29,15 @@ struct ConnectionView: View {
                                 .font(.subheadline).frame(minHeight: 44)
                         }.disabled(model.isWorking || model.calls.isBusy)
                         Text("앱 안에 수신 화면을 띄워요. 받기를 누르면 실제 AI 음성 연결을 시도해요. 시스템 수신 화면은 iPhone에서 따로 시험해야 해요.")
+                            .font(.caption).foregroundStyle(Palette.muted).lineSpacing(3)
+                    }
+                    #endif
+                    #if DEBUG && !targetEnvironment(simulator)
+                    if model.backendConnected {
+                        SecondaryButton(title: "잠금 화면 전화 시험", icon: "iphone.radiowaves.left.and.right") {
+                            Task { if await model.calls.requestPushTest() { pushTestScheduled = true } }
+                        }.disabled(model.isWorking || model.calls.isBusy)
+                        Text("누르면 약 8초 뒤 실제 인터넷 전화가 와요. 앱 사용 시간은 전송하지 않아요. 잠금 화면을 보려면 안내가 뜬 뒤 iPhone을 잠가 주세요.")
                             .font(.caption).foregroundStyle(Palette.muted).lineSpacing(3)
                     }
                     #endif
@@ -72,6 +82,11 @@ struct ConnectionView: View {
                     Button("서버 정보와 연결 삭제", role: .destructive) { Task { await model.disconnectAndDelete(); if !model.backendConnected { dismiss() } } }
                     Button("취소", role: .cancel) {}
                 } message: { Text("서버의 기기 등록, 캐릭터 설정, 기억과 통화 기록이 삭제돼요. 이 기기에 저장한 기억은 ‘우리’에 남아 있어요.") }
+                .alert("전화 시험을 예약했어요", isPresented: $pushTestScheduled) {
+                    Button("확인") {}
+                } message: {
+                    Text("약 8초 안에 iPhone을 잠가 주세요. 잠금 화면에 지민 전화가 오면 받아서 실제 AI 음성을 확인할 수 있어요.")
+                }
         }
     }
     @ViewBuilder private var connectionStatus: some View {
