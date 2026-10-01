@@ -1,6 +1,6 @@
-# Apple 사용 정보 처리 문의 — 답변 대기
+# Apple 사용 정보 처리 문의 — 개발자 본인 회신 수령 보고
 
-작성일: 2026-09-29. **2026-10-01 Apple Developer Support의 ‘기타 개발 및 기술 질문’ 경로로 핵심 데이터 흐름과 3.3.3(P) 질문을 발송했습니다. 답변·허용·배포 권한은 아직 받지 않았습니다.** 케이스 ID와 접수 화면은 Git에서 제외한 `server/.local/`에 보관합니다. 아래는 문의 준비에 사용한 상세 문안과 구현 데이터 흐름이며, 실제 발송 문안은 이 내용을 한 가지 핵심 질문으로 줄였습니다.
+작성일: 2026-09-29, 상태 갱신: 2026-10-01. Apple Developer Support의 ‘기타 개발 및 기술 질문’ 경로로 핵심 데이터 흐름과 3.3.3(P) 질문을 발송했습니다. **개발자 본인은 이 최소 신호 설계를 허용한다는 Apple의 공식 회신을 받았다고 보고했습니다. 회신 원문·조건은 이 작업에서 직접 확인하지 못했습니다.** 이 보고를 근거로 개인 iPhone의 Debug 통합 시험만 열었습니다. TestFlight/배포 심사 통과나 다른 데이터 흐름까지 허용됐다는 뜻은 아닙니다. 케이스 기록은 Git에서 제외한 `server/.local/`에 보관합니다.
 
 ## 개발자 지원 문의 문안
 
@@ -25,9 +25,9 @@ flowchart TD
   A[사용자: 개별 앱·하루 한도 선택] --> B[FamilyControls individual 허용]
   B --> C[DeviceActivityMonitor: 기기 안의 임계치 감지]
   C --> D[기기 안의 동의·오늘 쉬기·횟수·통화 중 검사]
-  D --> E{Apple 서면 확인 + 양쪽 승인 설정}
-  E -- 아직 확인되지 않음 --> F[기기에만 감지 기록 · 네트워크 전송 없음]
-  E -- 이 정확한 설계가 허용될 때만 --> G[서버: 임의 요청 UUID + 시각 + automatic]
+  D --> E{개발자 회신 보고 + 개발 빌드 양쪽 설정}
+  E -- 설정 꺼짐 --> F[기기에만 감지 기록 · 네트워크 전송 없음]
+  E -- 개인 Debug 시험 설정 켜짐 --> G[서버: 임의 요청 UUID + 시각 + automatic]
   G --> H[APNs VoIP → PushKit → CallKit 수신]
   H --> I[사용자가 받기 → 실제 WebRTC 음성 연결]
   J[별도 사용자 입력: 성격·확정 기억] --> K[인증된 서버 설정]
@@ -39,7 +39,7 @@ flowchart TD
 | 항목 | 구현 |
 |---|---|
 | 사용 한도·선택 토큰·시도 기록 | App Group의 기기 안 저장소 |
-| 승인 전 임계치 이벤트 | `local_only_apple_approval_pending`로 기기에 기록. 전송 작업도 생성하지 않음 |
+| 승인 설정이 꺼진 빌드의 임계치 이벤트 | `local_only_apple_approval_pending`로 기기에 기록. 전송 작업도 생성하지 않음 |
 | 제안된 최소 신호 | `requestId`, `createdAt`, `mode=automatic` |
 | 서버로 보내지 않는 정보 | 앱 토큰·이름·카테고리·도메인·사용 시간·한도·횟수·보고서 |
 | 실제 수신과 음성 | PushKit/CallKit + 네이티브 WebRTC/OpenAI Realtime |
@@ -56,4 +56,4 @@ flowchart TD
 - [PushKit의 VoIP 수신](https://developer.apple.com/documentation/pushkit/responding-to-voip-notifications-from-pushkit): 실제 VoIP 요청을 즉시 CallKit에 보고해야 합니다. 이 원형의 개별 제품 용도가 심사에서 허용됐다는 의미는 아닙니다.
 - [Family Controls 배포 권한 요청](https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement): 앱과 확장 기능별로 요청해야 합니다.
 
-답변이 오면 문의 번호, 답변 전문, 검토한 정확한 앱·서버 버전, 허용 범위를 함께 보관해야 합니다. 허용 범위가 다르면 승인 설정만 켜지 말고 데이터 흐름을 먼저 수정합니다.
+배포 판단 전에는 회신 원문과 조건, 검토한 정확한 앱·서버 버전, 허용 범위를 개발자 기록과 대조해야 합니다. 허용 범위가 다르면 데이터 흐름을 먼저 수정합니다.

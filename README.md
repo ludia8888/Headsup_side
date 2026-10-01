@@ -77,13 +77,13 @@ Xcode 15.3 이상(검증 환경: Xcode 26.0), Node.js 22 이상이 필요합니�
 
 ## Apple 확인 후의 자동 통합 시험
 
-**이 단계를 실행할 수 있다는 사실이 Apple 허용의 증거는 아닙니다.** 먼저 [Apple 확인 요청 문안](docs/APPLE_APPROVAL_PACKET.md)의 정확한 데이터 흐름에 대한 서면 답변을 확보하고 기록합니다. 그 뒤에만 다음을 함께 설정합니다.
+**이 단계를 실행할 수 있다는 사실이 Apple 허용의 증거는 아닙니다.** 개발자 본인은 [Apple 확인 요청 문안](docs/APPLE_APPROVAL_PACKET.md)의 최소 신호 설계를 허용한다는 공식 회신을 받았다고 보고했습니다. 회신 원문과 조건은 이 작업에서 직접 확인하지 못했습니다. 이 보고를 근거로 개인 iPhone의 Debug/Sandbox 통합 시험을 열었고, Release는 계속 잠겨 있습니다.
 
-- 서버 `.env`: `AUTO_CALL_APPROVED=true`, 실제 `APPLE_APPROVAL_REFERENCE`, APNs `.p8` 파일 경로·Key ID·Team ID·Bundle ID·환경.
-- 앱과 확장 기능: `AUTOMATION_APPROVED=YES`, 같은 승인 근거를 `AUTO_CALL_APPROVAL_REFERENCE`에 설정한 뒤 다시 빌드·서명.
+- 서버 `.env`: 개인 시험 서버에서 `AUTO_CALL_APPROVED=true`, 개발자 보고를 가리키는 `APPLE_APPROVAL_REFERENCE`, APNs `.p8` 파일 경로·Key ID·Team ID·Bundle ID·환경.
+- 앱과 확장 기능: Xcode의 `Jimin` **Debug** 구성에 `AUTOMATION_APPROVED=YES`와 같은 참조값을 설정했습니다. Xcode에서 다시 실행해도 이 개발용 설정이 유지됩니다. **Release** 구성은 `NO`입니다.
 - Debug는 APNs sandbox, Release/TestFlight는 production입니다. 배포 서명과 APNs 환경을 각각 확인합니다.
 
-사용 시간 이벤트에서 나오는 전송 내용은 임의 요청 ID, 이벤트 시각, 자동 요청 구분뿐입니다. **이 신호도 사용 시간에서 파생되므로**, 최소화했다고 허용된 것으로 판단하지 않습니다. 확장 기능의 백그라운드 전송은 지연될 수 있고, 서버는 60초가 지난 요청을 버립니다. APNs 수신도 운영체제·네트워크·방해금지 설정의 영향을 받습니다.
+사용 시간 이벤트에서 나오는 전송 내용은 임의 요청 ID, 이벤트 시각, 자동 요청 구분뿐입니다. **이 신호도 사용 시간에서 파생됩니다.** 배포 전에 Apple 회신 원문과 구현 범위를 대조해야 합니다. 확장 기능의 백그라운드 전송은 지연될 수 있고, 서버는 60초가 지난 요청을 버립니다. APNs 수신도 운영체제·네트워크·방해금지 설정의 영향을 받습니다.
 
 ## 자동 검사
 

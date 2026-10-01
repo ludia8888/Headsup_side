@@ -183,7 +183,7 @@ import os
         } else if isVoIP, let state = try? SharedResources.store().read() {
             localPolicyAllowsPush = SharedResources.automaticDispatchApproved && state.preferences.onboardingComplete &&
                 state.preferences.proactiveEnabled && state.preferences.pausedDay != InterventionPolicy.dayKey(Date()) &&
-                AuthorizationCenter.shared.authorizationStatus == .approved
+                state.screenTimeAuthorized && AuthorizationCenter.shared.authorizationStatus != .denied
         } else { localPolicyAllowsPush = !isVoIP }
         if !duplicate && !otherCall {
             model?.stopPreview()

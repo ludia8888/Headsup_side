@@ -17,8 +17,13 @@ settings:
   configs:
     Debug:
       APS_ENVIRONMENT: development
+      # Developer-reported official reply; private Sandbox integration testing only.
+      AUTOMATION_APPROVED: YES
+      AUTO_CALL_APPROVAL_REFERENCE: CASE_102982213153_OWNER_REPORTED_OFFICIAL_REPLY
     Release:
       APS_ENVIRONMENT: production
+      AUTOMATION_APPROVED: NO
+      AUTO_CALL_APPROVAL_REFERENCE: ""
 packages:
   JiminCore:
     path: ../Core

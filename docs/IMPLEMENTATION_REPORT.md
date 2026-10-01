@@ -12,9 +12,9 @@
 | 통화 정책·기억 동의 자동 검사 | **passed** | Swift XCTest **20개**, 실패 0. GPT-Live 음성 조각의 지연·정정·명시적 동의 조건 포함 |
 | 서버 자동 검사 | **passed** | Node 검사 **23개**, 실패 0. APNs 키 검사, 승인 잠금과 별개인 명시적 Sandbox 전화 시험, GPT-Live 세션·비밀키 경계 포함 |
 | TypeScript 검사·컴파일 | **passed** | `npm run typecheck`, `npm run build` |
-| iOS 앱 + 감지 확장 기능 | **passed** | Xcode Debug 빌드와 Ongleam Inc. 개발용 서명으로 iPhone 14 Pro / iOS 26.3에 전체 앱과 감지 확장 기능을 설치·실행 |
+| iOS 앱 + 감지 확장 기능 | **passed** | Xcode Debug 빌드와 Ongleam Inc. 개발용 서명으로 iPhone 14 Pro / iOS 26.3에 전체 앱과 감지 확장 기능을 설치·실행. 자동 시험 설정이 두 바이너리의 Info.plist에 들어간 것을 확인하고 2026-10-01 다시 덮어 설치·실행. 기존 앱 2개·30/60분 한도·기기 안의 시도 기록·오늘 쉬기 설정 보존 확인 |
 | iPhone 수동 통화 시험판 설치·음성 | **passed / 잠금 화면 수신 notProven** | 2026-10-01 iPhone 14 Pro / iOS 26.3에 `JiminManualDemo`를 Personal Team으로 서명·재설치. 처음에는 CallKit 보고 직후 통화가 종료됐고, 시험판에 `voip` 백그라운드 모드를 추가해 재설치한 뒤 서버가 수락·`gpt-live-1` 세션 생성·음성 연결·정상 종료를 기록. 두 수신 화면이 겹치던 UX도 수정해 재설치. 사용자가 받기 전 iPhone 상단 시스템 전화 알림만 뜨고, 받은 뒤 앱 통화 화면과 음성이 이어진다고 재확인. 잠금 화면·백그라운드 수신은 미시험 |
-| 서버 프로세스 기동·키 설정 | **passed** | 2026-10-01 로컬·HTTPS `/health` 응답에서 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: true`, `pushConfigured: true`, `automaticApproved: false` 확인. APNs Sandbox 전용 P-256 비밀키를 실제로 읽어 검증함. OpenAI·APNs 키는 소유자 전용 비공개 파일에 두고 Git에서 제외 |
+| 서버 프로세스 기동·키 설정 | **passed** | 2026-10-01 로컬·HTTPS `/health` 응답에서 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: true`, `pushConfigured: true`, `automaticApproved: true` 확인. APNs Sandbox 전용 P-256 비밀키를 실제로 읽어 검증함. OpenAI·APNs 키는 소유자 전용 비공개 파일에 두고 Git에서 제외 |
 | 앱의 서버 등록·인증·수동 수신 | **passed** | 로컬 연결 요청 → Keychain 저장 → 앱 재실행 → 캐릭터 설정 동기화 → 실제 서버 수동 통화 요청 → 시뮬레이터 앱 안 수신·받기 확인 |
 | 시뮬레이터 GPT-Live 신호 연결 | **passed** | 2026-10-01 진단 통화에서 서버 `sessionCreated: true`, WebRTC 연결과 `session.started` 뒤 `voiceConnectedAt` 기록, 정상 종료 확인. 소리가 실제로 들렸는지는 별도 |
 | 새 첫마디 통화 실험 | **notProven** | 짧은 질문 전달 코드·서버 검사·시뮬레이터 빌드/설치/실행은 확인. 이번 변경 후 음성으로 그 질문을 실제 들었거나 사용자가 답한 기록은 아직 없음 |
@@ -23,7 +23,8 @@
 | 실기기 Screen Time 집계 | **앱별 임계치 콜백 passed / 집계 정확도 notProven** | 전체 앱에서 Family Controls 허용·개별 앱 2개 선택·60분/30분 한도 저장 확인. 감지 확장 기능이 두 앱의 첫 임계치 콜백을 각각 기기 안에 기록. 확장 기능의 새 프로세스가 권한 상태를 `notDetermined`로 읽어 이벤트를 잘못 버리던 문제를 수정하고 재평가한 결과, 두 이벤트가 `paused_today`로 기록됨. 사용자가 설정한 ‘오늘은 쉬기’는 유지. 중간 휴식·자정·한도 변경·권한 철회·웹사이트 영향은 notProven |
 | 실기기 CallKit·PushKit 수신 | **Sandbox APNs 잠금 화면 수신 passed / 강제 종료 notProven** | 전체 `com.jimin.mvp` 앱이 서버에 등록되고 VoIP 토큰 1개가 등록됨. 사용자가 명시적으로 누른 ‘잠금 화면 전화 시험’ 1건에서 서버가 Sandbox APNs를 전송, iPhone 잠금 상태에서 전화가 왔다고 사용자 확인. 기기 기록상 요청 후 수신까지 9.6초(시험용 고정 지연 약 8초 포함), 받기·WebRTC 연결·원격 음성 패킷·종료 확인. 일반 백그라운드와 강제 종료 상태는 별도 시험 필요 |
 | 실제 한국어 왕복 음성·20분 유지 | **단기 통화 passed / 20분 notProven** | 사용자가 잠금 화면 시험 통화가 잘된다고 확인. 서버에서 `gpt-live-1` 세션과 음성 연결, 기기에서 원격 음성 패킷 확인. 서버에 종료 결과가 누락되던 문제는 종료 전송의 백그라운드 작업·다음 실행 재전송으로 수정했고, 실제 누락 1건을 `ended`로 복구해 기기 확인 기록과 일치시킴. 이어폰·말 끼어들기·긴 침묵·20분 유지는 미시험 |
-| Apple 외부 신호 허용 여부 | **문의 접수 / 답변 대기** | 최소 신호도 사용 시간에서 파생됨. 2026-10-01 Apple Developer Support에 정확한 설계와 3.3.3(P) 질문을 보냈고 케이스 ID는 비공개 기록에 보관. 문의 접수는 허용이 아님. 앱·서버의 자동 전송 승인 설정 모두 꺼져 있음 |
+| Apple 외부 신호 허용 여부 | **개발자 본인 공식 회신 수령 보고 / 원문 미확인** | 2026-10-01 Apple Developer Support에 정확한 설계와 3.3.3(P) 질문을 보낸 뒤, 개발자 본인이 허용한다는 공식 회신을 받았다고 보고. 원문·조건은 이 작업에서 직접 확인하지 못함. 개인 Debug 시험의 앱·확장 기능·서버 자동 설정만 켬. 배포 허용과 구분 |
+| 사용 시간 → 자동 전화 | **경로 활성화 / 실제 통합 notProven** | 개발용 빌드의 앱·감지 확장 기능에 승인 플래그·근거를 넣고 서명·실기기에 설치, 서버 승인 플래그를 켜 로컬·HTTPS health 확인. 서버에 등록된 VoIP 토큰 1개와 자동 통화 0건 확인. 첫 임계치 2개는 이날 `오늘은 쉬기` 상태에서 이미 기록돼 자동 통화를 발생시키지 않음. 새 사용 한도 → 자동 신호 → 잠금 화면 전화는 아직 미관찰 |
 | Family Controls 배포/TestFlight | **팀 승인 확인 / 지민 App ID 설정·배포 notProven** | Apple 포털의 요청 기록에서 Ongleam 팀의 Family Controls (Distribution) 승인을 확인. 지민 앱과 감지 확장 기능의 개별 App ID에서는 Distribution 항목이 꺼져 있음. 두 대상의 활성화·배포 서명·TestFlight 통합 시험은 아직 하지 않음 |
 | 사용자 행동 변화 | **notProven** | 실제 참여자의 수신율·앱 사용 중단·다음날 전화 의향 데이터 없음 |
 
@@ -47,13 +48,13 @@
 
 UI 개편의 기준, 수정 내역, 실제 검토 범위와 화면은 [최신 v2 제작 기록](UI_REDESIGN_V2.md)에 별도로 남겼습니다. 수신/연결 중/대화/동행 상태를 구분해 표시합니다. 시뮬레이터에서는 CallKit 수신이 바로 종료되어 앱 안 수신 화면을 사용하도록 수정했습니다. 초기 GPT-Live 연결의 SDP 끝 CRLF 누락도 서버에서 보정했습니다. 이후 실기기 수동 통화에서 시스템 전화 알림·실제 음성 연결·종료가 사용자와 서버 기록으로 확인됐습니다.
 
-수동 통화 경로에는 실제 CallKit과 네이티브 WebRTC 코드가 있으며 서버가 GPT-Live의 SDP answer를 받아 연결합니다. `gpt-live-1`은 자연스러운 음성 대화, `gpt-6-luna`는 필요할 때 위임받은 기억·동행·연락 중단 작업을 맡습니다. 종료 시 Live가 확인해 준 사용 초 수만 기록하고, 확인이 없으면 확정하지 않습니다. 모형 AI 음성을 들려주거나 API 실패를 연결 성공으로 바꾸지 않습니다. 실기기 수동 음성은 확인됐습니다. APNs 자격 증명은 준비됐지만 실제 APNs 수신과 자동 수신은 아직 확인되지 않았습니다. Apple 답변 전에도 사용자가 직접 누르는 Sandbox 전화 시험은 사용 시간 신호 없이 APNs 경로만 검증합니다.
+수동 통화 경로에는 실제 CallKit과 네이티브 WebRTC 코드가 있으며 서버가 GPT-Live의 SDP answer를 받아 연결합니다. `gpt-live-1`은 자연스러운 음성 대화, `gpt-6-luna`는 필요할 때 위임받은 기억·동행·연락 중단 작업을 맡습니다. 종료 시 Live가 확인해 준 사용 초 수만 기록하고, 확인이 없으면 확정하지 않습니다. 모형 AI 음성을 들려주거나 API 실패를 연결 성공으로 바꾸지 않습니다. 실기기 수동 음성과 명시적 Sandbox APNs 잠금 화면 수신은 확인됐습니다. 사용 시간에서 시작된 자동 수신은 아직 확인되지 않았습니다.
 
 후속 요청에 맞춰 `server/scripts/configure-openai.mjs`와 [비공개 키 입력 화면](http://127.0.0.1:8788)을 추가했습니다. API 키는 채팅·명령 인자·소스 코드에 넣지 않고 입력창 또는 사용자가 지정한 키 파일로 받습니다. 실제 키로 `gpt-live-1`과 `gpt-6-luna`의 모델 조회 접근을 확인한 뒤 `.env`에 저장하고 서버를 재시작했습니다. 입력창의 키 값은 제출 직후 지우며 상태 응답과 로그에는 키 값을 포함하지 않습니다. 모델 조회 성공만으로 WebRTC 통화 성공을 판단하지 않습니다.
 
 실제 앱 연결 시험에서 서명 없는 시뮬레이터의 Keychain 오류 `-34018`을 발견했습니다. Xcode의 로컬 실행용 서명으로 다시 빌드·설치한 뒤 Keychain 저장과 재실행 후 인증 사용을 확인했습니다. 서명 방식 변경으로 기존 캐릭터·온보딩 설정이 다른 저장소로 바뀌지 않도록 시뮬레이터 저장 위치도 고정했습니다. iPhone은 기존의 서명된 App Group과 공유 Keychain을 사용합니다.
 
-자동 감지 이벤트는 현재 **기기에만 기록**합니다. 앱·확장 기능의 개발자 빌드 설정과 서버 설정에 각각 승인 플래그와 확인 근거가 있어야 전송 경로가 열립니다. 일반 사용자 설정으로 이 잠금을 해제할 수 없습니다. Apple의 정확한 설계 허용 여부와 배포 권한을 확보한 뒤에만 통합 시험으로 넘어가야 합니다.
+Xcode의 `Jimin` Debug 구성에서만 앱·확장 기능의 승인 플래그와 참조값을 켰고, 비공개 시험 서버 설정도 열었습니다. Release 구성은 꺼져 있습니다. 개발자 본인의 공식 회신 수령 보고를 근거로 한 시험이며, 원문·허용 범위는 독립적으로 확인하지 못했습니다. 잠금 상태에서 VoIP가 앱을 새로 실행할 때 Family Controls가 일시적으로 `notDetermined`를 반환해 저장된 승인을 지우거나 통화를 닫지 않도록 수정했습니다. 명시적으로 `denied`가 반환되면 차단합니다.
 
 화면 잠금이나 긴 침묵에서 실제 양방향 통화가 유지되는지, 강제 종료 상태에서 전화가 도착하는지, 이벤트부터 수신까지 얼마나 지연되는지는 미확인입니다. OS 동작을 항상 전체 화면/즉시 도착으로 약속하지 않습니다.
 
@@ -61,10 +62,10 @@ UI 개편의 기준, 수정 내역, 실제 검토 범위와 화면은 [최신 v2
 
 - [실행 안내](../README.md): Xcode 실행, 서버 API 키·연결 코드, 실제 기기 서명 설정.
 - [설계와 API](ARCHITECTURE.md): 앱과 확장 기능의 공유 규칙, 서버 책임, 데이터 흐름.
-- [Apple 확인 문안](APPLE_APPROVAL_PACKET.md): 실제 최소 신호 설계와 2026-10-01 문의 접수 상태.
-- [실기기 검증표](DEVICE_TEST_MATRIX.md): 승인 전 감지/수동 음성 시험과 승인 후 자동 시험을 구분.
+- [Apple 확인 문안](APPLE_APPROVAL_PACKET.md): 실제 최소 신호 설계와 개발자 본인의 회신 수령 보고.
+- [실기기 검증표](DEVICE_TEST_MATRIX.md): 수동 음성 시험과 자동 통합 시험을 구분.
 - [시뮬레이터 홈 캡처](evidence/home.png): 실제 실행 화면. 통화·행동 변화의 증거는 아님.
 
-현재 로컬 서버는 단일 프로세스 원형이며 임시 HTTPS 터널로 iPhone 시험에 연결합니다. Apple 사용 정보 처리 문의와 지민 전용 APNs Sandbox 키 등록은 완료했습니다. Apple 서면 허용·실제 APNs 수신·배포용 지민 App ID 설정·TestFlight 배포는 아직 완료되지 않았습니다. 사용자 실험에서 의미 있는 완료 판단은 실제 전화 수신과 음성 성공뿐 아니라 앱 사용 중단과 다음날 의향까지 확인한 뒤 내려야 합니다.
+현재 로컬 서버는 단일 프로세스 원형이며 임시 HTTPS 터널로 iPhone 시험에 연결합니다. 서버와 터널이 켜져 있어야 자동 요청이 도착합니다. 지민 전용 APNs Sandbox 키와 명시적 잠금 화면 수신은 확인했습니다. Apple 회신은 개발자가 받았다고 보고했지만 원문을 직접 확인하지 못했고, 배포용 지민 App ID 설정·TestFlight 배포는 완료되지 않았습니다. 사용자 실험에서 의미 있는 완료 판단은 실제 전화 수신과 음성 성공뿐 아니라 앱 사용 중단과 다음날 의향까지 확인한 뒤 내려야 합니다.
 
 공식 참고: [Apple DeviceActivityEvent](https://developer.apple.com/documentation/deviceactivity/deviceactivityevent), [Apple VoIP 수신](https://developer.apple.com/documentation/pushkit/responding-to-voip-notifications-from-pushkit), [Apple 배포 권한](https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement), [Apple 약관](https://developer.apple.com/support/terms/apple-developer-program-license-agreement/), [GPT-Live WebRTC](https://developers.openai.com/api/docs/guides/voice-webrtc?api=live), [GPT-Live 위임·도구](https://developers.openai.com/api/docs/guides/live-delegation), [gpt-live-1](https://developers.openai.com/api/docs/models/gpt-live-1).

@@ -41,7 +41,15 @@ import JiminCore
             var rearmAfterAuthorization = false
             state = try SharedResources.store().update { state in
                 InterventionPolicy.rollDay(&state, now: Date())
-                state.screenTimeAuthorized = AuthorizationCenter.shared.authorizationStatus == .approved
+                // A cold launch for a VoIP push can briefly report .notDetermined
+                // before Family Controls has restored this process's authorization.
+                // Keep the last status confirmed by the host app in that case.
+                switch AuthorizationCenter.shared.authorizationStatus {
+                case .approved: state.screenTimeAuthorized = true
+                case .denied: state.screenTimeAuthorized = false
+                case .notDetermined: break
+                @unknown default: state.screenTimeAuthorized = false
+                }
                 if state.screenTimeAuthorized {
                     for app in state.apps {
                         let key = app.id.uuidString
