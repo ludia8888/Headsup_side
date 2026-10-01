@@ -33,7 +33,10 @@ public enum InterventionPolicy {
         } else if kind == .retry && (ledger.retryArmedAt == nil || ledger.attemptIDs.count != 1) {
             decision = .skip("retry_not_armed")
         } else {
-            if kind == .first { ledger.firstObserved = true }
+            // A callback can arrive while Family Controls authorization is still
+            // settling. Do not permanently consume today's first threshold until
+            // the extension can actually use the authorization.
+            if kind == .first && state.screenTimeAuthorized { ledger.firstObserved = true }
             if !state.screenTimeAuthorized { decision = .skip("permission_unavailable") }
             else if !state.preferences.proactiveEnabled { decision = .skip("disabled") }
             else if state.preferences.pausedDay == state.day { decision = .skip("paused_today") }

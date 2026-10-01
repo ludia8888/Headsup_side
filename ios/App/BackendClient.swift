@@ -66,7 +66,12 @@ enum BackendClient {
         try decoder.decode(CallEnvelope.self, from: await request("v1/calls/\(id.uuidString)", method: "GET"))
     }
     static func result(_ id: UUID, _ outcome: CallOutcome) async throws {
-        _ = try await request("v1/calls/\(id.uuidString)/result", body: ["status": outcome.rawValue])
+        let data = try await request("v1/calls/\(id.uuidString)/result", body: ["status": outcome.rawValue])
+        struct Result: Decodable { let status: String }
+        let result = try decoder.decode(Result.self, from: data)
+        guard result.status == outcome.rawValue else {
+            throw APIError("기기의 통화 결과와 서버 기록이 달라 다시 확인해야 해요.")
+        }
     }
     static func liveUsage(_ id: UUID, seconds: Double) async throws {
         _ = try await request("v1/calls/\(id.uuidString)/usage", body: ["seconds": seconds])

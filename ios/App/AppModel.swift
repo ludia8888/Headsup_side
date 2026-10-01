@@ -26,6 +26,7 @@ import JiminCore
     private let localSpeech = AVSpeechSynthesizer()
     private var syncTask: Task<Void, Never>?
     private var profileRevision = 0
+    private var authorizationRecoveryDay: String?
     var calls: CallCoordinator { .shared }
 
     init() {
@@ -33,17 +34,37 @@ import JiminCore
         backendConnected = (try? SecureConnectionStore.read()) != nil
         calls.model = self
         calls.reconcileInterruptedCall()
+        if backendConnected { Task { await calls.reconcileTerminalResults() } }
     }
     func refresh() {
         do {
+            var rearmAfterAuthorization = false
             state = try SharedResources.store().update { state in
                 InterventionPolicy.rollDay(&state, now: Date())
                 state.screenTimeAuthorized = AuthorizationCenter.shared.authorizationStatus == .approved
+                if state.screenTimeAuthorized {
+                    for app in state.apps {
+                        let key = app.id.uuidString
+                        guard var ledger = state.ledgers[key], ledger.attemptIDs.isEmpty, !ledger.answered,
+                              let last = state.detections.last(where: { $0.appID == app.id }),
+                              last.result == "permission_unavailable",
+                              InterventionPolicy.dayKey(last.at) == state.day else { continue }
+                        // Repair records created by the old extension and ask
+                        // DeviceActivity to evaluate today's usage again.
+                        ledger.firstObserved = false
+                        state.ledgers[key] = ledger
+                        rearmAfterAuthorization = true
+                    }
+                }
                 return state
             }
             selection = FamilyActivitySelection()
             selection.applicationTokens = Set(state.apps.compactMap(ScreenTimeScheduler.token))
             if !state.screenTimeAuthorized { DeviceActivityCenter().stopMonitoring() }
+            else if rearmAfterAuthorization && state.preferences.onboardingComplete && authorizationRecoveryDay != state.day {
+                try ScreenTimeScheduler.replaceFirstThresholds(state)
+                authorizationRecoveryDay = state.day
+            }
         } catch { errorMessage = error.localizedDescription }
     }
     func change(_ update: (inout SharedState) -> Void, schedule: Bool = false, sync: Bool = true) {

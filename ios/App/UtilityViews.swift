@@ -3,6 +3,7 @@ import JiminCore
 
 struct ConnectionView: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject private var calls = CallCoordinator.shared
     @Environment(\.dismiss) private var dismiss
     @State private var url = "http://127.0.0.1:8787"
     @State private var code = ""
@@ -34,12 +35,17 @@ struct ConnectionView: View {
                     #endif
                     #if DEBUG && !targetEnvironment(simulator)
                     if model.backendConnected {
-                        SecondaryButton(title: "잠금 화면 전화 시험", icon: "iphone.radiowaves.left.and.right") {
-                            Task { if await model.calls.requestPushTest() { pushTestScheduled = true } }
-                        }.disabled(model.isWorking || model.calls.isBusy)
-                        Text("누르면 약 8초 뒤 실제 인터넷 전화가 와요. 앱 사용 시간은 전송하지 않아요. 잠금 화면을 보려면 안내가 뜬 뒤 iPhone을 잠가 주세요.")
-                            .font(.caption).foregroundStyle(Palette.muted).lineSpacing(3)
+                        pushRegistrationStatus
                     }
+                    SecondaryButton(title: "잠금 화면 전화 시험", icon: "iphone.radiowaves.left.and.right") {
+                        if !model.backendConnected { advanced = true }
+                        else { Task { if await model.calls.requestPushTest() { pushTestScheduled = true } } }
+                    }.disabled(model.isWorking || model.calls.isBusy ||
+                               (model.backendConnected && calls.pushRegistrationPhase != .registered))
+                    Text(model.backendConnected
+                         ? "누르면 약 8초 뒤 실제 인터넷 전화가 와요. 앱 사용 시간은 전송하지 않아요. 잠금 화면을 보려면 안내가 뜬 뒤 iPhone을 잠가 주세요."
+                         : "먼저 아래 ‘시험 서버 연결하기’에서 이 지민 앱을 연결해 주세요. 이전 ‘지민 통화 시험’ 앱의 연결은 자동으로 옮겨지지 않아요.")
+                        .font(.caption).foregroundStyle(Palette.muted).lineSpacing(3)
                     #endif
                     if model.backendConnected {
                         SecondaryButton(title: model.checkingConnection ? "연결 확인 중" : "연결 다시 확인", icon: "arrow.clockwise") {
@@ -77,7 +83,11 @@ struct ConnectionView: View {
                 }.padding(24)
             }.background(Palette.paper).navigationTitle("통화 연결").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("완료") { model.errorMessage = nil; dismiss() } } }
-                .task { advanced = !model.backendConnected; await model.checkConnection() }
+                .task {
+                    advanced = !model.backendConnected
+                    await model.checkConnection()
+                    if model.backendConnected { await calls.syncPushToken() }
+                }
                 .confirmationDialog("서버의 내 정보와 연결을 삭제할까요?", isPresented: $deleting, titleVisibility: .visible) {
                     Button("서버 정보와 연결 삭제", role: .destructive) { Task { await model.disconnectAndDelete(); if !model.backendConnected { dismiss() } } }
                     Button("취소", role: .cancel) {}
@@ -89,6 +99,25 @@ struct ConnectionView: View {
                 }
         }
     }
+    #if DEBUG && !targetEnvironment(simulator)
+    @ViewBuilder private var pushRegistrationStatus: some View {
+        switch calls.pushRegistrationPhase {
+        case .registered:
+            InlineNotice(title: "iPhone 전화 수신 등록 완료", detail: "이 기기로 시험 전화를 보낼 준비가 됐어요.", icon: "checkmark.circle")
+        case .waitingForToken, .starting:
+            InlineNotice(title: "iPhone 전화 수신 등록을 기다리는 중", detail: "iOS에서 전화 수신용 번호를 아직 받지 못했어요. 인터넷을 확인하고 앱을 잠시 열어 두세요.", icon: "iphone.radiowaves.left.and.right", warning: true)
+        case .needsConnection:
+            InlineNotice(title: "전화 수신 등록에 서버 연결이 필요해요", detail: "아래에서 이 iPhone을 시험 서버에 연결해 주세요.", icon: "link", warning: true)
+        case .registering:
+            InlineNotice(title: "iPhone 전화 수신 등록 중", detail: "iOS에서 받은 수신 정보를 시험 서버에 확인하고 있어요.", icon: "arrow.triangle.2.circlepath")
+        case .failed:
+            InlineNotice(title: "iPhone 전화 수신 등록 실패", detail: "서버 연결과 인터넷을 확인한 뒤 아래 버튼으로 다시 시도해 주세요.", icon: "exclamationmark.circle", warning: true)
+            SecondaryButton(title: "전화 수신 등록 다시 시도", icon: "arrow.clockwise") {
+                Task { await calls.syncPushToken() }
+            }
+        }
+    }
+    #endif
     @ViewBuilder private var connectionStatus: some View {
         switch model.connectionReadiness {
         case .ready:

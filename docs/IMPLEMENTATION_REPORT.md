@@ -12,7 +12,7 @@
 | 통화 정책·기억 동의 자동 검사 | **passed** | Swift XCTest **20개**, 실패 0. GPT-Live 음성 조각의 지연·정정·명시적 동의 조건 포함 |
 | 서버 자동 검사 | **passed** | Node 검사 **23개**, 실패 0. APNs 키 검사, 승인 잠금과 별개인 명시적 Sandbox 전화 시험, GPT-Live 세션·비밀키 경계 포함 |
 | TypeScript 검사·컴파일 | **passed** | `npm run typecheck`, `npm run build` |
-| iOS 앱 + 감지 확장 기능 | **passed** | Xcode 26.0, 시뮬레이터 SDK, iOS 최소 버전 17.4. 로컬 실행용 ad hoc 서명으로 빌드·설치. 실기기 서명 성공을 뜻하지 않음 |
+| iOS 앱 + 감지 확장 기능 | **passed** | Xcode Debug 빌드와 Ongleam Inc. 개발용 서명으로 iPhone 14 Pro / iOS 26.3에 전체 앱과 감지 확장 기능을 설치·실행 |
 | iPhone 수동 통화 시험판 설치·음성 | **passed / 잠금 화면 수신 notProven** | 2026-10-01 iPhone 14 Pro / iOS 26.3에 `JiminManualDemo`를 Personal Team으로 서명·재설치. 처음에는 CallKit 보고 직후 통화가 종료됐고, 시험판에 `voip` 백그라운드 모드를 추가해 재설치한 뒤 서버가 수락·`gpt-live-1` 세션 생성·음성 연결·정상 종료를 기록. 두 수신 화면이 겹치던 UX도 수정해 재설치. 사용자가 받기 전 iPhone 상단 시스템 전화 알림만 뜨고, 받은 뒤 앱 통화 화면과 음성이 이어진다고 재확인. 잠금 화면·백그라운드 수신은 미시험 |
 | 서버 프로세스 기동·키 설정 | **passed** | 2026-10-01 로컬·HTTPS `/health` 응답에서 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: true`, `pushConfigured: true`, `automaticApproved: false` 확인. APNs Sandbox 전용 P-256 비밀키를 실제로 읽어 검증함. OpenAI·APNs 키는 소유자 전용 비공개 파일에 두고 Git에서 제외 |
 | 앱의 서버 등록·인증·수동 수신 | **passed** | 로컬 연결 요청 → Keychain 저장 → 앱 재실행 → 캐릭터 설정 동기화 → 실제 서버 수동 통화 요청 → 시뮬레이터 앱 안 수신·받기 확인 |
@@ -20,9 +20,9 @@
 | 새 첫마디 통화 실험 | **notProven** | 짧은 질문 전달 코드·서버 검사·시뮬레이터 빌드/설치/실행은 확인. 이번 변경 후 음성으로 그 질문을 실제 들었거나 사용자가 답한 기록은 아직 없음 |
 | 시뮬레이터 화면 표시 | **passed** | iPhone 17 Pro / iOS 26.0에서 실행. 캐릭터 선택, AI 홈, 시험 서버 연결 안내, 설정의 성격·목소리·재전화 안내를 실제 UI에서 확인 |
 | UI/UX 개편 v2 | **구현 / 부분 UI 검증 passed** | Character.AI·Nomi·러비더비의 현재 공개 화면을 검토. 전체 캐릭터 장면·보라빛 어두운 바탕·고정 전화 버튼·기억 목록·설정 묶음 적용. 홈/우리/기억 작성/설정 상단/성격 선택/개발용 앱 내부 수신 표시와 거절 후 복귀, 입력 취소, 큰 글자의 홈, SE 첫 설정 표시 확인. 개발용 수신 화면은 실제 음성·시스템 수신 성공이 아니며 대화/20분 동행의 실제 음성은 미확인 |
-| 실기기 Screen Time 집계 | **서명·설치 passed / 감지 notProven** | Personal Team 시도는 실패했으나, 2026-10-01 Ongleam Inc. 개발자 팀으로 기존 팀 앱과 분리된 `com.jimin.mvp` 및 `com.jimin.mvp.monitor`를 iPhone 14 Pro / iOS 26.3용으로 빌드·설치·실행. 두 바이너리의 Family Controls (Development)·App Group 서명 확인. 사용자 권한 허용, 앱 선택, 임계치 이벤트·독립 집계·휴식·날짜/한도 변경·권한 철회·웹사이트 영향은 아직 실기기 notProven |
-| 실기기 CallKit·PushKit 수신 | **수동 CallKit 상단 알림 passed / 실제 PushKit notProven** | 사용자가 iPhone 전경에서 시스템 전화 알림을 관찰. 지민 앱 전용·Sandbox·`com.jimin.mvp` 범위 APNs 키 등록, 서버 설정, 개발용 Push Notifications 서명, `audio`·`voip` 백그라운드 모드 확인. 실제 서버 등록 VoIP 기기 토큰은 아직 0개. 8초 뒤 실제 전화가 오는 명시적 시험 경로를 빌드·설치했으나 잠금 화면/백그라운드/강제 종료 수신은 아직 미시험 |
-| 실제 한국어 왕복 음성·20분 유지 | **단기 통화 passed / 20분 notProven** | iPhone에서 시험 통화가 정상 동작했다고 사용자가 확인했고 서버에 수락·음성 연결·정상 종료가 남음. 이어폰·잠금·끼어들기·긴 침묵·20분 유지는 미시험 |
+| 실기기 Screen Time 집계 | **앱별 임계치 콜백 passed / 집계 정확도 notProven** | 전체 앱에서 Family Controls 허용·개별 앱 2개 선택·60분/30분 한도 저장 확인. 감지 확장 기능이 두 앱의 첫 임계치 콜백을 각각 기기 안에 기록. 확장 기능의 새 프로세스가 권한 상태를 `notDetermined`로 읽어 이벤트를 잘못 버리던 문제를 수정하고 재평가한 결과, 두 이벤트가 `paused_today`로 기록됨. 사용자가 설정한 ‘오늘은 쉬기’는 유지. 중간 휴식·자정·한도 변경·권한 철회·웹사이트 영향은 notProven |
+| 실기기 CallKit·PushKit 수신 | **Sandbox APNs 잠금 화면 수신 passed / 강제 종료 notProven** | 전체 `com.jimin.mvp` 앱이 서버에 등록되고 VoIP 토큰 1개가 등록됨. 사용자가 명시적으로 누른 ‘잠금 화면 전화 시험’ 1건에서 서버가 Sandbox APNs를 전송, iPhone 잠금 상태에서 전화가 왔다고 사용자 확인. 기기 기록상 요청 후 수신까지 9.6초(시험용 고정 지연 약 8초 포함), 받기·WebRTC 연결·원격 음성 패킷·종료 확인. 일반 백그라운드와 강제 종료 상태는 별도 시험 필요 |
+| 실제 한국어 왕복 음성·20분 유지 | **단기 통화 passed / 20분 notProven** | 사용자가 잠금 화면 시험 통화가 잘된다고 확인. 서버에서 `gpt-live-1` 세션과 음성 연결, 기기에서 원격 음성 패킷 확인. 서버에 종료 결과가 누락되던 문제는 종료 전송의 백그라운드 작업·다음 실행 재전송으로 수정했고, 실제 누락 1건을 `ended`로 복구해 기기 확인 기록과 일치시킴. 이어폰·말 끼어들기·긴 침묵·20분 유지는 미시험 |
 | Apple 외부 신호 허용 여부 | **문의 접수 / 답변 대기** | 최소 신호도 사용 시간에서 파생됨. 2026-10-01 Apple Developer Support에 정확한 설계와 3.3.3(P) 질문을 보냈고 케이스 ID는 비공개 기록에 보관. 문의 접수는 허용이 아님. 앱·서버의 자동 전송 승인 설정 모두 꺼져 있음 |
 | Family Controls 배포/TestFlight | **팀 승인 확인 / 지민 App ID 설정·배포 notProven** | Apple 포털의 요청 기록에서 Ongleam 팀의 Family Controls (Distribution) 승인을 확인. 지민 앱과 감지 확장 기능의 개별 App ID에서는 Distribution 항목이 꺼져 있음. 두 대상의 활성화·배포 서명·TestFlight 통합 시험은 아직 하지 않음 |
 | 사용자 행동 변화 | **notProven** | 실제 참여자의 수신율·앱 사용 중단·다음날 전화 의향 데이터 없음 |

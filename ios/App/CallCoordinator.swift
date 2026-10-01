@@ -12,7 +12,9 @@ import os
 @MainActor final class CallCoordinator: NSObject, ObservableObject, @preconcurrency CXProviderDelegate, @preconcurrency PKPushRegistryDelegate {
     static let shared = CallCoordinator()
     enum Phase: String { case idle, ringing, connecting, talking, together, closing }
+    enum PushRegistrationPhase { case starting, needsConnection, waitingForToken, registering, registered, failed }
     @Published private(set) var phase: Phase = .idle
+    @Published private(set) var pushRegistrationPhase: PushRegistrationPhase = .starting
     @Published private(set) var callerName = "지민"
     @Published private(set) var remainingSeconds = 1200
     @Published private(set) var simulatorNotice: String?
@@ -33,6 +35,7 @@ import os
     private var connectionTask: Task<Void, Never>?
     private var pauseTask: Task<Void, Never>?
     private var resultTask: Task<Void, Error>?
+    private var reconcilingTerminalResults = false
     private var answerAction: CXAnswerCallAction?
     private var ringTimer: Timer?
     private var tickTimer: Timer?
@@ -60,8 +63,11 @@ import os
     }
     func start() {
         #if !MANUAL_CALL_DEMO
+        guard registry == nil else { return }
         let registry = PKPushRegistry(queue: .main); registry.delegate = self
-        registry.desiredPushTypes = [.voIP]; self.registry = registry
+        self.registry = registry
+        pushRegistrationPhase = .waitingForToken
+        registry.desiredPushTypes = [.voIP]
         #endif
     }
     func reconcileInterruptedCall() {
@@ -77,15 +83,45 @@ import os
         Task { try? await BackendClient.result(id, .failed) }
         model?.refresh()
     }
+    func reconcileTerminalResults() async {
+        guard !reconcilingTerminalResults, (try? SecureConnectionStore.read()) != nil else { return }
+        reconcilingTerminalResults = true
+        defer { reconcilingTerminalResults = false }
+        guard let history = try? SharedResources.store().read().callHistory else { return }
+        for call in history.filter({ $0.outcome.isTerminal && $0.serverResultConfirmedAt == nil }).prefix(20) {
+            do {
+                try await BackendClient.result(call.id, call.outcome)
+                confirmServerResult(call.id, outcome: call.outcome)
+            } catch {
+                // Keep the local terminal result for the next foreground retry.
+                logger.error("Terminal call result was not confirmed by the server")
+            }
+        }
+    }
+    private func confirmServerResult(_ id: UUID, outcome: CallOutcome) {
+        try? SharedResources.store().update { state in
+            guard let index = state.callHistory.firstIndex(where: { $0.id == id }),
+                  state.callHistory[index].outcome == outcome else { return }
+            state.callHistory[index].serverResultConfirmedAt = Date()
+        }
+        model?.refresh()
+    }
     func syncPushToken() async {
-        guard let pushToken, (try? SecureConnectionStore.read()) != nil else { return }
+        guard let pushToken else { pushRegistrationPhase = .waitingForToken; return }
+        guard (try? SecureConnectionStore.read()) != nil else { pushRegistrationPhase = .needsConnection; return }
+        pushRegistrationPhase = .registering
         #if DEBUG
         let environment = "sandbox"
         #else
         let environment = "production"
         #endif
-        do { _ = try await BackendClient.request("v1/device/push", method: "PUT", body: ["token": pushToken, "environment": environment]) }
-        catch { model?.errorMessage = "전화 수신용 기기 등록을 확인하지 못했어요. \(error.localizedDescription)" }
+        do {
+            _ = try await BackendClient.request("v1/device/push", method: "PUT", body: ["token": pushToken, "environment": environment])
+            pushRegistrationPhase = .registered
+        } catch {
+            pushRegistrationPhase = .failed
+            model?.errorMessage = "전화 수신용 기기 등록을 확인하지 못했어요. \(error.localizedDescription)"
+        }
     }
     func manualCall(simulatorPreview: Bool = false) async {
         guard !isBusy, let model else { return }
@@ -438,18 +474,29 @@ import os
             model?.refresh()
         }
         let previous = resultTask
-        let task = Task { if let previous { try? await previous.value }; if let id { try await BackendClient.result(id, outcome) } }
+        let task = Task {
+            if let previous { try? await previous.value }
+            if let id {
+                try await BackendClient.result(id, outcome)
+                if outcome.isTerminal { confirmServerResult(id, outcome: outcome) }
+            }
+        }
         resultTask = task; return task
     }
     private func finish(_ outcome: CallOutcome, reason: CXCallEndedReason) {
         guard let id = callID else { return }
         let appID = (try? SharedResources.store().read())?.attempts.first(where: { $0.id == id })?.appID
-        _ = record(outcome)
+        let confirmation = record(outcome)
+        if backgroundTask == .invalid {
+            backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "Finish AI call") { [weak self] in
+                Task { @MainActor in self?.endBackgroundTask() }
+            }
+        }
         answerAction?.fail(); answerAction = nil
         connectionTask?.cancel(); connectionTask = nil
         pauseTask?.cancel(); pauseTask = nil
         ringTimer?.invalidate(); tickTimer?.invalidate(); ringTimer = nil; tickTimer = nil
-        transport?.close(); transport = nil; endBackgroundTask()
+        transport?.close(); transport = nil
         RTCAudioSession.sharedInstance().isAudioEnabled = false
         if !simulationFallback { provider.reportCall(with: id, endedAt: Date(), reason: reason) }
         if answered { feedbackCallID = id }
@@ -458,6 +505,11 @@ import os
         if let appID, [.declined, .unanswered].contains(outcome) {
             do { try ScreenTimeScheduler.armMissedCallRetry(appID: appID) }
             catch { model?.errorMessage = error.localizedDescription }
+        }
+        Task { [weak self] in
+            do { try await confirmation.value }
+            catch { self?.logger.error("Call result delivery failed; it will be retried on foreground") }
+            self?.endBackgroundTask()
         }
     }
     private func endBackgroundTask() {
@@ -480,10 +532,13 @@ import os
         RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession); RTCAudioSession.sharedInstance().isAudioEnabled = false
     }
     func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
-        pushToken = pushCredentials.token.map { String(format: "%02x", $0) }.joined(); Task { await syncPushToken() }
+        pushToken = pushCredentials.token.map { String(format: "%02x", $0) }.joined()
+        pushRegistrationPhase = .registering
+        Task { await syncPushToken() }
     }
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
-        pushToken = nil; Task { _ = try? await BackendClient.request("v1/device/push", method: "DELETE") }
+        pushToken = nil; pushRegistrationPhase = .waitingForToken
+        Task { _ = try? await BackendClient.request("v1/device/push", method: "DELETE") }
     }
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
         let call = payload.dictionaryPayload["call"] as? [String: Any]

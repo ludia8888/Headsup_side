@@ -1,6 +1,6 @@
 # 실기기·TestFlight 검증표
 
-판정 값: **passed / failed / blocked / notProven**. 실제 증거가 없으면 notProven으로 둡니다. 수동 실기기 통화는 확인했습니다. 2026-10-01 Ongleam Inc. 개발자 팀으로 **별도 앱** `com.jimin.mvp`와 감지 확장 기능 `com.jimin.mvp.monitor`를 iPhone 14 Pro용으로 서명·빌드하고 설치·실행했습니다. 두 바이너리의 Family Controls·App Group 권한과 앱의 개발용 Push Notifications 권한을 확인했습니다. 지민 전용 APNs Sandbox 키와 서버 설정도 준비했지만 실제 VoIP 토큰·푸시 수신은 **notProven**입니다. Screen Time 권한 허용과 실제 임계치 도달은 아직 **notProven**이고, Apple의 외부 신호 허용 답변 전에는 자동 전송을 잠가 둡니다.
+판정 값: **passed / failed / blocked / notProven**. 실제 증거가 없으면 notProven으로 둡니다. 2026-10-01 Ongleam Inc. 개발자 팀으로 **별도 앱** `com.jimin.mvp`와 감지 확장 기능 `com.jimin.mvp.monitor`를 iPhone 14 Pro / iOS 26.3에 서명·설치했습니다. 두 바이너리의 Family Controls·App Group 권한과 앱의 개발용 Push Notifications 권한을 확인했습니다. 전체 앱에서 개별 앱 2개의 한도 콜백과, 명시적 Sandbox APNs 시험으로 잠금 상태의 전화 수신·음성 연결을 확인했습니다. Apple의 외부 신호 허용 답변 전에는 사용 시간 이벤트의 자동 전송을 잠가 둡니다.
 
 시험 기록에는 앱/서버 버전, iPhone 모델·iOS 버전·시간대, 앱/확장 기능 서명, 마이크/Screen Time 권한, APNs 환경, 연결망, 관찰 시각을 적습니다. 앱 토큰이나 원본 사용 보고서를 수집하지 않습니다.
 
@@ -8,7 +8,7 @@
 
 | 시험 | 방법 | 기대 결과 | 판정 |
 |---|---|---|---|
-| 앱별 독립 집계 | 앱 A 15분, B 30분을 지정해 각각 사용 | A/B 이벤트가 독립적으로 도착 | notProven |
+| 앱별 독립 집계 | 두 앱에 서로 다른 한도를 지정해 사용 | A/B 이벤트가 독립적으로 도착 | 앱별 첫 콜백 2건 passed. 실제 누적 분·중간 휴식의 정확도 notProven |
 | 중간 휴식 | A를 8분 사용 후 중단, 다시 8분 사용 | 연속 16분이 아니어도 하루 15분 이벤트 발생 | notProven |
 | 날짜 변경 | 자정 전후 사용, 필요하면 시차 변경도 별도 시험 | 현지 날짜가 바뀔 때만 당일 기록 초기화 | notProven |
 | 한도 낮춤·높임 | 오늘 이미 사용한 뒤 한도 변경 | 기존 사용 포함, 이미 시도한 통화 횟수 보존 | notProven |
@@ -24,7 +24,7 @@
 |---|---|---|
 | 시뮬레이터 수동 시험 | 홈 ‘대화하기’ → 앱 안 수신 화면 → ‘받기’ → GPT-Live 세션 생성·WebRTC `session.started` 기록. 실제 왕복 소리는 별도 확인 | 신호 연결 passed, 실제 소리 notProven |
 | 실기기 수동 전경 시험 | `JiminManualDemo` 설치·실행 후 사용자 요청 → 수신 화면 → 실제 왕복 음성. APNs 없이 시험 | 설치·실행·사용자 확인 음성 passed. 수정 후 받기 전 iPhone 상단 시스템 전화 알림만 표시되고, 수락 후 앱 통화 화면과 음성이 이어짐을 사용자 확인. 잠금 화면/백그라운드/강제 종료 수신 notProven |
-| 실기기 명시적 APNs 시험 | 앱 ‘통화 연결’의 ‘잠금 화면 전화 시험’ → 8초 안에 기기 잠금 → Sandbox APNs → PushKit → CallKit → GPT-Live 왕복 음성. 사용 시간 정보는 전송하지 않음 | 코드·서명·설치 passed, 실제 토큰 등록·APNs 도착·잠금 화면 표시·음성 notProven |
+| 실기기 명시적 APNs 시험 | 앱 ‘통화 연결’의 ‘잠금 화면 전화 시험’ → 8초 안에 기기 잠금 → Sandbox APNs → PushKit → CallKit → GPT-Live 왕복 음성. 사용 시간 정보는 전송하지 않음 | 잠금 상태의 전화 수신 사용자 확인, VoIP 토큰 등록·서버 push 요청·기기 수신·받기·WebRTC 연결·원격 음성 패킷·서버 종료 결과 passed. 강제 종료 수신 notProven |
 | 일반 백그라운드 자동 수신 | 임계치 → 최소 신호 → APNs → CallKit을 순서별로 기록 | blocked |
 | 앱 강제 종료 상태 | 일반 백그라운드와 별도 측정. 도착하지 않으면 실패로 기록 | blocked |
 | 두 앱이 거의 동시에 한도 초과 | 한 통화만 진행. 추가 이벤트를 나중에 몰아서 전화하지 않음 | blocked |

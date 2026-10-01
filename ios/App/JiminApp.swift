@@ -22,7 +22,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in model.connectLocalSimulator(url) }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { model.refresh(); model.calls.tick(); Task { await model.checkConnection() } }
+                    if phase == .active {
+                        model.refresh(); model.calls.tick()
+                        Task {
+                            await model.checkConnection()
+                            if model.backendConnected { await model.calls.syncPushToken() }
+                            await model.calls.reconcileTerminalResults()
+                        }
+                    }
                 }
         }
     }

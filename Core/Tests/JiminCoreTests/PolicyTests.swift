@@ -89,6 +89,9 @@ final class PolicyTests: XCTestCase {
     func testPermissionRevokedAndUserDisabledFailClosed() {
         var s = fixture(); s.screenTimeAuthorized = false
         XCTAssertEqual(threshold(&s), .skip("permission_unavailable"))
+        XCTAssertFalse(s.ledgers[s.apps[0].id.uuidString]!.firstObserved)
+        s.screenTimeAuthorized = true
+        XCTAssertNotNil(requestID(threshold(&s)))
         var t = fixture(); t.preferences.proactiveEnabled = false
         XCTAssertEqual(threshold(&t), .skip("disabled"))
     }

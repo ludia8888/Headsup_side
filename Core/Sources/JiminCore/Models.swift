@@ -136,6 +136,7 @@ public struct LocalCallRecord: Codable, Identifiable, Sendable {
     public var firstUserReplyAt: Date?
     public var firstRemoteAudioPacketAt: Date?
     public var finishedAt: Date?
+    public var serverResultConfirmedAt: Date?
     public var arrivalDelaySeconds: Double?
     public init(id: UUID, characterName: String, startedAt: Date, outcome: CallOutcome = .requested) {
         self.id = id; self.characterName = characterName; self.startedAt = startedAt; self.outcome = outcome

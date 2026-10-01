@@ -1,6 +1,5 @@
 import Foundation
 import DeviceActivity
-import FamilyControls
 import JiminCore
 
 final class ActivityMonitor: DeviceActivityMonitor {
@@ -17,7 +16,10 @@ final class ActivityMonitor: DeviceActivityMonitor {
         let now = Date()
         do {
             let decision = try SharedResources.store().update { state in
-                state.screenTimeAuthorized = AuthorizationCenter.shared.authorizationStatus == .approved
+                // AuthorizationCenter starts as .notDetermined in a newly
+                // launched extension, even when the host app has authorization.
+                // The host app records its confirmed status in this shared store;
+                // reading the extension's initial value would discard real events.
                 return InterventionPolicy.handleThreshold(&state, appID: appID, kind: kind, now: now,
                     approvalGranted: SharedResources.automaticDispatchApproved)
             }
