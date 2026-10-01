@@ -74,6 +74,48 @@ final class PolicyTests: XCTestCase {
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!
         let id = requestID(threshold(&s, at: tomorrow)); XCTAssertNotNil(id); XCTAssertNil(s.preferences.pausedDay)
     }
+    func testResumeTodayRechecksPausedThresholdWithoutResettingCallHistory() {
+        var s = fixture(); InterventionPolicy.pauseToday(&s, now: now, calendar: calendar)
+        XCTAssertEqual(threshold(&s), .skip("paused_today"))
+        XCTAssertTrue(s.ledgers[s.apps[0].id.uuidString]!.firstObserved)
+        InterventionPolicy.resumeToday(&s, now: now.addingTimeInterval(60), calendar: calendar)
+        XCTAssertNil(s.preferences.pausedDay)
+        XCTAssertFalse(s.ledgers[s.apps[0].id.uuidString]!.firstObserved)
+        let id = requestID(threshold(&s, at: now.addingTimeInterval(61)))
+        XCTAssertEqual(s.attempts.map(\.id), [id])
+        XCTAssertEqual(threshold(&s, at: now.addingTimeInterval(62)), .skip("duplicate_threshold"))
+    }
+    func testResumeTodayPreservesAttemptAndRestartsCanceledRetryFromResume() {
+        var s = fixture(); let first = requestID(threshold(&s))
+        finish(&s, id: first, outcome: .declined)
+        s.ledgers[s.apps[0].id.uuidString]?.retryMonitorRegisteredAt = now.addingTimeInterval(30)
+        InterventionPolicy.pauseToday(&s, now: now.addingTimeInterval(40), calendar: calendar)
+        let resumed = now.addingTimeInterval(600)
+        InterventionPolicy.resumeToday(&s, now: resumed, calendar: calendar)
+        let ledger = s.ledgers[s.apps[0].id.uuidString]!
+        XCTAssertTrue(ledger.firstObserved)
+        XCTAssertEqual(ledger.attemptIDs, [first])
+        XCTAssertEqual(ledger.retryArmedAt, resumed)
+        XCTAssertNil(ledger.retryMonitorRegisteredAt)
+        XCTAssertEqual(threshold(&s, at: resumed), .skip("duplicate_threshold"))
+        XCTAssertNotNil(requestID(threshold(&s, kind: .retry, at: resumed.addingTimeInterval(1200))))
+        XCTAssertEqual(s.attempts.count, 2)
+    }
+    func testResumeTodayCanUseRemainingAttemptAfterCallFailedBeforeRinging() {
+        var s = fixture(); let first = requestID(threshold(&s))
+        finish(&s, id: first, outcome: .failed)
+        InterventionPolicy.pauseToday(&s, now: now.addingTimeInterval(40), calendar: calendar)
+        InterventionPolicy.resumeToday(&s, now: now.addingTimeInterval(60), calendar: calendar)
+        XCTAssertFalse(s.ledgers[s.apps[0].id.uuidString]!.firstObserved)
+        let second = requestID(threshold(&s, at: now.addingTimeInterval(61)))
+        XCTAssertEqual(s.ledgers[s.apps[0].id.uuidString]!.attemptIDs, [first, second])
+        XCTAssertEqual(s.attempts.count, 2)
+        finish(&s, id: second, outcome: .failed)
+        InterventionPolicy.pauseToday(&s, now: now.addingTimeInterval(70), calendar: calendar)
+        InterventionPolicy.resumeToday(&s, now: now.addingTimeInterval(80), calendar: calendar)
+        XCTAssertTrue(s.ledgers[s.apps[0].id.uuidString]!.firstObserved)
+        XCTAssertEqual(threshold(&s, at: now.addingTimeInterval(81)), .skip("duplicate_threshold"))
+    }
     func testMidnightPreservesAnOngoingCallAndHistory() {
         var s = fixture(); let id = requestID(threshold(&s)); finish(&s, id: id, outcome: .voiceConnected)
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!

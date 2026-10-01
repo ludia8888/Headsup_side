@@ -114,4 +114,31 @@ public enum InterventionPolicy {
         rollDay(&state, now: now, calendar: calendar)
         state.preferences.pausedDay = state.day
     }
+
+    public static func resumeToday(_ state: inout SharedState, now: Date, calendar: Calendar = .current) {
+        rollDay(&state, now: now, calendar: calendar)
+        guard state.preferences.pausedDay == state.day else { return }
+        state.preferences.pausedDay = nil
+        for app in state.apps {
+            let key = app.id.uuidString
+            guard var ledger = state.ledgers[key] else { continue }
+            if ledger.attemptIDs.isEmpty && !ledger.answered {
+                // A first threshold reached during the pause was consumed locally.
+                // Re-evaluate today's actual usage without changing call attempts.
+                ledger.firstObserved = false
+            } else if ledger.attemptIDs.count < 2 && !ledger.answered,
+                      let lastID = ledger.attemptIDs.last,
+                      state.attempts.last(where: { $0.id == lastID })?.outcome == .failed {
+                // An explicit resume may retry a call that never rang, using
+                // the remaining daily attempt instead of resetting history.
+                ledger.firstObserved = false
+            } else if ledger.attemptIDs.count == 1 && !ledger.answered && ledger.retryArmedAt != nil {
+                // A canceled retry starts counting additional use from resume,
+                // rather than including activity during the pause.
+                ledger.retryArmedAt = now
+                ledger.retryMonitorRegisteredAt = nil
+            }
+            state.ledgers[key] = ledger
+        }
+    }
 }

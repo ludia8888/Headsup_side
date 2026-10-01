@@ -128,6 +128,30 @@ import JiminCore
         change { InterventionPolicy.pauseToday(&$0, now: Date()) }
         ScreenTimeScheduler.cancelRetries(state)
     }
+    func resumeToday() async -> Bool {
+        guard state.preferences.pausedDay == state.day else { return false }
+        guard backendConnected else {
+            errorMessage = "자동 전화를 다시 켜려면 먼저 시험 서버에 연결해 주세요."
+            return false
+        }
+        do {
+            // The threshold can fire immediately when today's limit was already
+            // crossed. Clear the server's pause before allowing a new local request.
+            await syncTask?.value
+            var resumedPreferences = state.preferences
+            resumedPreferences.pausedDay = nil
+            try await BackendClient.sync(resumedPreferences)
+            state = try SharedResources.store().update { state in
+                InterventionPolicy.resumeToday(&state, now: Date()); return state
+            }
+            if state.preferences.onboardingComplete { try ScreenTimeScheduler.replaceFirstThresholds(state) }
+            for app in state.apps { try ScreenTimeScheduler.armMissedCallRetry(appID: app.id) }
+            return true
+        } catch {
+            errorMessage = "오늘 자동 전화를 다시 켜지 못했어요. \(error.localizedDescription)"
+            return false
+        }
+    }
     func setProactive(_ enabled: Bool) {
         change { $0.preferences.proactiveEnabled = enabled }
         // Keep the already-started additional-usage counter. The policy still drops

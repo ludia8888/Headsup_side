@@ -60,6 +60,7 @@ struct SettingsView: View {
     @State private var retry = false
     @State private var permissions = false
     @State private var details = false
+    @State private var resumeCooldown = false
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -92,13 +93,22 @@ struct SettingsView: View {
                                     }
                                 }.tint(Palette.rose)
                                 Divider().overlay(Palette.line)
-                                Button { model.pauseToday() } label: {
+                                Button { togglePause() } label: {
                                     HStack {
-                                        Label(paused ? "오늘은 쉬는 중" : "오늘은 쉬기", systemImage: paused ? "moon.zzz" : "moon")
+                                        Label(resumeCooldown ? "전화 요청 확인 중" : (paused ? "오늘 다시 전화받기" : "오늘은 쉬기"),
+                                              systemImage: paused ? "phone.arrow.up.right" : "moon")
                                         Spacer()
-                                        Text(paused ? "내일 다시" : "오늘만").font(.caption).foregroundStyle(Palette.muted)
+                                        Text(resumeCooldown ? "잠시만요" : (paused ? "지금부터" : "오늘만"))
+                                            .font(.caption).foregroundStyle(Palette.muted)
                                     }.font(.subheadline.weight(.medium)).frame(minHeight: 44)
-                                }.disabled(paused).foregroundStyle(paused ? Palette.muted : Palette.rose)
+                                }.disabled(resumeCooldown).foregroundStyle(Palette.rose)
+                                if paused {
+                                    Text("다시 켜면 오늘 이미 넘긴 앱 한도 때문에 곧바로 전화가 올 수 있어요.")
+                                        .font(.caption).foregroundStyle(Palette.muted)
+                                } else if resumeCooldown {
+                                    Text("중복 탭으로 다시 쉬기 상태가 되지 않도록 30초 동안 버튼을 잠시 잠가요.")
+                                        .font(.caption).foregroundStyle(Palette.muted)
+                                }
                                 if !SharedResources.automaticDispatchApproved {
                                     InlineNotice(title: "자동 전화는 Apple 확인을 기다려요.", detail: "지금은 직접 거는 통화를 시험해요. 정한 약속은 저장해 둘게요.", icon: "phone.badge.waveform")
                                 }
@@ -160,6 +170,16 @@ struct SettingsView: View {
         }
     }
     private var paused: Bool { model.state.preferences.pausedDay == model.state.day }
+    private func togglePause() {
+        guard !resumeCooldown else { return }
+        if paused {
+            resumeCooldown = true
+            Task { @MainActor in
+                if await model.resumeToday() { try? await Task.sleep(for: .seconds(30)) }
+                resumeCooldown = false
+            }
+        } else { model.pauseToday() }
+    }
     private func selectApps() {
         Task {
             if model.state.screenTimeAuthorized { picker = true }
