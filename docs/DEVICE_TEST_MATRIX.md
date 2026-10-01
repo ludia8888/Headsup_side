@@ -1,6 +1,6 @@
 # 실기기·TestFlight 검증표
 
-판정 값: **passed / failed / blocked / notProven**. 실제 증거가 없으면 notProven으로 둡니다. 수동 실기기 통화는 확인했으며, 앱 사용 감지·자동 수신·배포 경로의 승인 조건은 여전히 **blocked(승인 증거 미확보)** 입니다.
+판정 값: **passed / failed / blocked / notProven**. 실제 증거가 없으면 notProven으로 둡니다. 수동 실기기 통화는 확인했습니다. 2026-10-01 전체 앱의 실기기 서명 재시도는 Personal Team의 Family Controls·Push Notifications 미지원으로 실패했고, 서버의 APNs와 자동 전송 승인도 꺼져 있습니다. 앱 사용 감지·자동 수신·배포 경로는 **blocked**입니다.
 
 시험 기록에는 앱/서버 버전, iPhone 모델·iOS 버전·시간대, 앱/확장 기능 서명, 마이크/Screen Time 권한, APNs 환경, 연결망, 관찰 시각을 적습니다. 앱 토큰이나 원본 사용 보고서를 수집하지 않습니다.
 
