@@ -15,7 +15,9 @@ import AVFAudio
     private var sessionStarted = false
     private var connected = false
     private var closed = false
+    private var audioProbeTask: Task<Void, Never>?
     var onReady: (() -> Void)?
+    var onFirstRemoteAudioPacket: (() -> Void)?
     var onFailure: ((String) -> Void)?
     var onEvent: (([String: Any]) -> Void)?
 
@@ -64,10 +66,10 @@ import AVFAudio
               let data = try? JSONSerialization.data(withJSONObject: event) else { return }
         _ = channel?.sendData(RTCDataBuffer(data: data, isBinary: false))
     }
-    func greet() {
+    func greet(cue: String?) {
         // Persona, story seed, and consent rules were fixed by the trusted server at session creation.
         send(["type": "session.instructions.append", "event_id": UUID().uuidString, "delegation_id": NSNull(),
-              "content": "지금 한국어로 먼저 짧게 인사해. 이번 전화의 새 소재로 예상 밖의 질문 하나를 자연스럽게 건네고 답을 기다려. 매번 같은 안부로 시작하지 마."])
+              "content": "지금 첫마디를 시작해. 인사·설명·잔소리 없이 다음 질문을 한국어 한 문장으로 바로 말하고 사용자의 답을 기다려: \(cue ?? "오늘을 아이스크림 맛으로 고르면?")"])
     }
     func accompany() {
         send(["type": "session.instructions.append", "event_id": UUID().uuidString, "delegation_id": NSNull(),
@@ -89,6 +91,7 @@ import AVFAudio
     }
     func close() {
         guard !closed else { return }; closed = true
+        audioProbeTask?.cancel(); audioProbeTask = nil
         audioTrack?.isEnabled = false
         onReady = nil; onFailure = nil
         if sessionStarted, channel?.readyState == .open,
@@ -103,7 +106,31 @@ import AVFAudio
     }
     private func checkReady() {
         guard connected, sessionStarted, channel?.readyState == .open, !ready, !closed else { return }
-        ready = true; DispatchQueue.main.async { self.onReady?() }
+        ready = true; startAudioProbe()
+        DispatchQueue.main.async { self.onReady?() }
+    }
+    private func startAudioProbe() {
+        audioProbeTask?.cancel()
+        audioProbeTask = Task { [weak self] in
+            guard let self else { return }
+            // RTP arrival is a network milestone, not proof that sound reached the speaker.
+            for _ in 0..<80 {
+                guard !Task.isCancelled, !self.closed, let peer = self.peer else { return }
+                let received = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                    peer.statistics { report in
+                        let audio = report.statistics.values.contains { stat in
+                            guard stat.type == "inbound-rtp",
+                                  (stat.values["kind"] as? String ?? stat.values["mediaType"] as? String) == "audio" else { return false }
+                            return (stat.values["bytesReceived"] as? NSNumber)?.int64Value ?? 0 > 0
+                        }
+                        continuation.resume(returning: audio)
+                    }
+                }
+                guard !Task.isCancelled, !self.closed else { return }
+                if received { self.onFirstRemoteAudioPacket?(); return }
+                try? await Task.sleep(for: .milliseconds(250))
+            }
+        }
     }
     nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCPeerConnectionState) {
         DispatchQueue.main.async { [weak self] in

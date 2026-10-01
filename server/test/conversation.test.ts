@@ -23,6 +23,14 @@ test("random selection can reach different ideas and excludes recent stories and
   assert.ok(reached.size > conversationHistoryLimit, "the chooser should rotate beyond one small subset");
 });
 
+test("every opening is a short answerable cue before the free-form conversation", () => {
+  for (const idea of conversationIdeas) {
+    assert.ok(idea.opening.length <= 30, `${idea.id} is too long for a quick opening`);
+    assert.ok(idea.opening.endsWith("?"), `${idea.id} should invite an immediate answer`);
+    assert.doesNotMatch(idea.opening, /인스타|릴스|쇼츠|유튜브|그만|한도|시간 초과/);
+  }
+});
+
 test("a server restart keeps story history, and old devices without history remain compatible", () => {
   const directory = mkdtempSync(join(tmpdir(), "jimin-stories-"));
   try {

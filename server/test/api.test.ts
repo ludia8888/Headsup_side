@@ -168,8 +168,10 @@ test("answer cannot be converted into missed call and feedback is explicitly sel
     await f.request(`/v1/calls/${b.requestId}/result`, { status: "answered" }, d.token);
     assert.equal((await f.request(`/v1/calls/${b.requestId}/result`, { status: "unanswered" }, d.token)).status, 409);
     await f.request(`/v1/calls/${b.requestId}/result`, { status: "ended" }, d.token);
-    assert.equal((await f.request(`/v1/calls/${b.requestId}/feedback`, { appStopped: "unknown", wantsTomorrow: "yes" }, d.token)).status, 200);
+    assert.equal((await f.request(`/v1/calls/${b.requestId}/feedback`, { openingEngaging: "yes", appStopped: "unknown", wantsTomorrow: "yes" }, d.token)).status, 200);
+    assert.equal(f.store.state.calls[b.requestId]?.observations?.openingEngaging, "yes");
     assert.equal(f.store.state.calls[b.requestId]?.observations?.appStopped, "unknown");
+    assert.equal((await f.request(`/v1/calls/${b.requestId}/feedback`, { openingEngaging: "maybe", appStopped: "unknown", wantsTomorrow: "yes" }, d.token)).status, 400);
   } finally { await f.close(); }
 });
 test("device deletion erases server context and revokes its token", async () => {
@@ -187,6 +189,8 @@ test("GPT-Live config separates natural voice conversation from Responses tools"
   assert.equal(c.delegation.responses.parallel_tool_calls, false);
   assert.deepEqual(c.delegation.responses.tools.map(t => t.name), ["propose_memory", "confirm_memory", "start_body_doubling", "pause_today"]);
   assert.match(c.instructions, /앱을 끄라거나/); assert.match(c.delegation.responses.instructions, /confirm_memory/);
+  assert.match(c.instructions, /인사, 자기소개, 전화한 이유/);
+  assert.match(c.instructions, /한 질문에 답한 뒤 사용자가 바로 끊어도/);
 });
 
 test("each call pins its random story across repeated requests, fetches and the voice session", async () => {
@@ -194,9 +198,9 @@ test("each call pins its random story across repeated requests, fetches and the 
   try {
     const d = await f.register(); const b = f.callBody("automatic");
     const response = await f.request("/v1/calls", b, d.token);
-    const first = await response.json() as { instructions: string };
+    const first = await response.json() as { instructions: string; openingCue: string };
     const plan = structuredClone(f.store.state.calls[b.requestId]?.conversation);
-    assert.ok(plan); assert.ok(first.instructions.includes(plan.opening));
+    assert.ok(plan); assert.equal(first.openingCue, plan.opening); assert.ok(first.instructions.includes(plan.opening));
     const history = [...f.store.state.devices[d.deviceId]!.recentConversationIds!];
     const again = await f.request("/v1/calls", b, d.token);
     const fetched = await f.request(`/v1/calls/${b.requestId}`, undefined, d.token, "GET");

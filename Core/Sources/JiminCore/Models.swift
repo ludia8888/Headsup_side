@@ -130,7 +130,11 @@ public struct LocalCallRecord: Codable, Identifiable, Sendable {
     public let characterName: String
     public let startedAt: Date
     public var outcome: CallOutcome
+    public var answeredAt: Date?
     public var voiceConnectedAt: Date?
+    public var firstOutputTranscriptAt: Date?
+    public var firstUserReplyAt: Date?
+    public var firstRemoteAudioPacketAt: Date?
     public var finishedAt: Date?
     public var arrivalDelaySeconds: Double?
     public init(id: UUID, characterName: String, startedAt: Date, outcome: CallOutcome = .requested) {

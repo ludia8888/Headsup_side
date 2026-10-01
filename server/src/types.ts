@@ -21,7 +21,7 @@ export interface Call {
   profile?: Profile; sessionCreating?: boolean; sessionCreated?: boolean;
   conversation?: ConversationPlan;
   openaiSessionId?: string;
-  observations?: { appStopped: "yes" | "no" | "unknown"; wantsTomorrow: "yes" | "no" | "unknown" };
+  observations?: { openingEngaging?: "yes" | "no" | "unknown"; appStopped: "yes" | "no" | "unknown"; wantsTomorrow: "yes" | "no" | "unknown" };
 }
 export interface State { devices: Record<string, Device>; calls: Record<string, Call> }
 export interface Config {

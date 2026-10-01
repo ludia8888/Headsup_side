@@ -49,6 +49,7 @@ export function createAPI(config: Config, upstream: Providers, store = new Store
   const envelope = (call: Call) => ({ id: call.id, displayName: call.displayName,
     createdAt: call.requestedAt, expiresAt: call.expiresAt, status: call.status,
     delivery: call.mode === "manual" ? "foreground" : "push", character: call.profile?.character,
+    openingCue: call.conversation?.opening,
     instructions: call.profile ? liveInstructions(call.profile, call.conversation) : undefined });
   const json = (response: ServerResponse, status: number, value: unknown) => {
     response.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" }); response.end(JSON.stringify(value));
@@ -173,11 +174,14 @@ export function createAPI(config: Config, upstream: Providers, store = new Store
           json(response, 200, { status: call.status }); return;
         }
         if (action === "feedback" && method === "POST") {
-          const o = record(await body(request)); only(o, ["appStopped", "wantsTomorrow"]);
+          const o = record(await body(request)); only(o, ["openingEngaging", "appStopped", "wantsTomorrow"]);
           if (!terminal(call.status) || !call.answeredAt) throw new HTTPError(409, "feedback_not_available");
           const appStopped = string(o.appStopped, 7); const wantsTomorrow = string(o.wantsTomorrow, 7);
+          const openingEngaging = o.openingEngaging === undefined ? undefined : string(o.openingEngaging, 7);
           if (!["yes", "no", "unknown"].includes(appStopped) || !["yes", "no", "unknown"].includes(wantsTomorrow)) throw new HTTPError(400, "invalid_feedback");
-          call.observations = { appStopped: appStopped as "yes" | "no" | "unknown", wantsTomorrow: wantsTomorrow as "yes" | "no" | "unknown" };
+          if (openingEngaging !== undefined && !["yes", "no", "unknown"].includes(openingEngaging)) throw new HTTPError(400, "invalid_feedback");
+          call.observations = { ...(openingEngaging === undefined ? {} : { openingEngaging: openingEngaging as "yes" | "no" | "unknown" }),
+            appStopped: appStopped as "yes" | "no" | "unknown", wantsTomorrow: wantsTomorrow as "yes" | "no" | "unknown" };
           store.save(); json(response, 200, { saved: true }); return;
         }
         if (action === "usage" && method === "POST") {

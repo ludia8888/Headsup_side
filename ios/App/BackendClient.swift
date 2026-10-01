@@ -9,6 +9,7 @@ struct CallEnvelope: Decodable {
     let status: String
     let delivery: String
     let character: CharacterProfile?
+    let openingCue: String?
     let instructions: String?
 }
 

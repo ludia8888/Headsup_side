@@ -25,6 +25,7 @@ import JiminCore
     private var pushToken: String?
     private var callID: UUID?
     private var currentProfile: CharacterProfile?
+    private var currentOpeningCue: String?
     private var transport: RealtimeTransport?
     private var connectionTask: Task<Void, Never>?
     private var pauseTask: Task<Void, Never>?
@@ -113,6 +114,7 @@ import JiminCore
         if !duplicate && !otherCall {
             model?.stopPreview()
             callID = id; callerName = envelope.displayName; currentProfile = envelope.character
+            currentOpeningCue = envelope.openingCue
             phase = .ringing; answered = false; startedAt = Date(); handledTools = []
             model?.pendingMemory = nil; consent = LiveConsentTracker(); pendingTools = [:]
             simulationFallback = false; simulatorNotice = nil; muted = false
@@ -203,6 +205,7 @@ import JiminCore
         }
         ringTimer?.invalidate(); ringTimer = nil; endBackgroundTask()
         answered = true; phase = .connecting; answerAction = action
+        markCallTime(\.answeredAt)
         connectionTask = Task { [weak self] in
             guard let self else { return }
             var ownedTransport: RealtimeTransport?
@@ -213,10 +216,15 @@ import JiminCore
                 }
             }
             do {
-                let envelope = try await BackendClient.call(id)
+                // The call lookup and answer receipt are independent network trips.
+                // Starting them together avoids making the user wait for both in sequence.
+                let answeredOnServer = self.record(.answered)
+                async let fetchedCall = BackendClient.call(id)
+                let envelope = try await fetchedCall
                 guard self.callID == id, !Task.isCancelled else { return }
                 self.currentProfile = envelope.character
-                try await self.record(.answered).value
+                self.currentOpeningCue = envelope.openingCue
+                try await answeredOnServer.value
                 try Task.checkCancellation()
                 guard self.callID == id else { throw CancellationError() }
                 try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP, .defaultToSpeaker])
@@ -225,8 +233,9 @@ import JiminCore
                 transport.onReady = { [weak self, weak transport] in
                     guard let self, self.callID == id, self.phase == .connecting else { return }
                     self.phase = .talking; self.answerAction?.fulfill(); self.answerAction = nil
-                    _ = self.record(.voiceConnected); transport?.greet(); self.startTicking()
+                    _ = self.record(.voiceConnected); transport?.greet(cue: self.currentOpeningCue); self.startTicking()
                 }
+                transport.onFirstRemoteAudioPacket = { [weak self] in self?.markCallTime(\.firstRemoteAudioPacketAt) }
                 transport.onFailure = { [weak self] message in self?.model?.errorMessage = message; self?.finish(.failed, reason: .failed) }
                 transport.onEvent = { [weak self] event in
                     if event["type"] as? String == "session.closed",
@@ -278,6 +287,12 @@ import JiminCore
         guard let type = event["type"] as? String else { return }
         if type == "session.input_transcript.delta", let delta = event["delta"] as? String,
            let start = event["start_ms"] as? Int, let end = event["end_ms"] as? Int {
+            if !delta.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               let id = callID,
+               let record = try? SharedResources.store().read().callHistory.first(where: { $0.id == id }),
+               record.firstOutputTranscriptAt != nil {
+                markCallTime(\.firstUserReplyAt)
+            }
             consent.recordInput(delta, startMS: start, endMS: end, now: Date())
             pauseTask?.cancel()
             let id = callID
@@ -288,6 +303,7 @@ import JiminCore
             }
         } else if type == "session.output_transcript.delta", let delta = event["delta"] as? String,
                   let start = event["start_ms"] as? Int, let end = event["end_ms"] as? Int {
+            if !delta.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { markCallTime(\.firstOutputTranscriptAt) }
             consent.recordOutput(delta, startMS: start, endMS: end, now: Date())
         } else if type == "response.event", let inner = event["event"] as? [String: Any],
                   let innerType = inner["type"] as? String {
@@ -353,6 +369,18 @@ import JiminCore
         }
         return result
     }
+    private func markCallTime(_ field: WritableKeyPath<LocalCallRecord, Date?>) {
+        guard let id = callID else { return }
+        do {
+            let changed = try SharedResources.store().update { state -> Bool in
+                guard let index = state.callHistory.firstIndex(where: { $0.id == id }),
+                      state.callHistory[index][keyPath: field] == nil else { return false }
+                state.callHistory[index][keyPath: field] = Date()
+                return true
+            }
+            if changed { model?.refresh() }
+        } catch { model?.errorMessage = "통화 지연 기록을 저장하지 못했어요. \(error.localizedDescription)" }
+    }
     @discardableResult private func record(_ outcome: CallOutcome) -> Task<Void, Error> {
         let id = callID
         if let id {
@@ -382,7 +410,7 @@ import JiminCore
         RTCAudioSession.sharedInstance().isAudioEnabled = false
         if !simulationFallback { provider.reportCall(with: id, endedAt: Date(), reason: reason) }
         if answered { feedbackCallID = id }
-        callID = nil; phase = .idle; bodyDeadline = nil; startedAt = nil
+        callID = nil; currentOpeningCue = nil; phase = .idle; bodyDeadline = nil; startedAt = nil
         model?.pendingMemory = nil
         if let appID, [.declined, .unanswered].contains(outcome) {
             do { try ScreenTimeScheduler.armMissedCallRetry(appID: appID) }
@@ -419,7 +447,8 @@ import JiminCore
         let createdAt = (call?["createdAt"] as? String).flatMap { formatter.date(from: $0) } ?? Date.distantPast
         let expiresAt = (call?["expiresAt"] as? String).flatMap { formatter.date(from: $0) } ?? Date.distantPast
         let envelope = CallEnvelope(id: id, displayName: call?["displayName"] as? String ?? "AI 전화",
-            createdAt: createdAt, expiresAt: expiresAt, status: "requested", delivery: "push", character: nil, instructions: nil)
+            createdAt: createdAt, expiresAt: expiresAt, status: "requested", delivery: "push", character: nil,
+            openingCue: nil, instructions: nil)
         receive(envelope, isVoIP: true, completion: completion)
     }
 }

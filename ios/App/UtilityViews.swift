@@ -174,7 +174,7 @@ struct ActiveCallView: View {
         case .idle: "통화 종료"
         case .ringing: "전화가 왔어요"
         case .connecting: "목소리를 연결하고 있어요"
-        case .talking: "편하게 이야기해 줘"
+        case .talking: "한마디만 답하고 끊어도 좋아"
         case .together: "지금, 같이 있는 중"
         case .closing: "마지막 인사를 나누고 있어요"
         }
@@ -193,6 +193,7 @@ struct ActiveCallView: View {
 struct FeedbackView: View {
     let callID: UUID
     @Environment(\.dismiss) private var dismiss
+    @State private var firstLine = "unknown"
     @State private var stopped = "unknown"
     @State private var tomorrow = "unknown"
     @State private var saving = false
@@ -202,6 +203,7 @@ struct FeedbackView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     ScreenHeading(title: "전화는 어땠어요?", subtitle: "네가 느낀 그대로 알려줘요.")
+                    question("첫마디가 답하고 싶어졌나요?", value: $firstLine, choices: [("yes", "바로 답하고 싶었어요"), ("no", "별로 끌리지 않았어요"), ("unknown", "기억나지 않아요")])
                     question("보던 앱을 멈췄나요?", value: $stopped, choices: [("yes", "멈췄어요"), ("no", "계속 봤어요"), ("unknown", "말하지 않을래요")])
                     question("내일도 전화받고 싶나요?", value: $tomorrow, choices: [("yes", "받고 싶어요"), ("no", "쉬고 싶어요"), ("unknown", "아직 모르겠어요")])
                     if let error { InlineNotice(title: "답을 저장하지 못했어요.", detail: error, warning: true) }
@@ -233,7 +235,7 @@ struct FeedbackView: View {
     }
     private func save() async {
         saving = true; defer { saving = false }
-        do { _ = try await BackendClient.request("v1/calls/\(callID.uuidString)/feedback", body: ["appStopped": stopped, "wantsTomorrow": tomorrow]); dismiss() }
+        do { _ = try await BackendClient.request("v1/calls/\(callID.uuidString)/feedback", body: ["openingEngaging": firstLine, "appStopped": stopped, "wantsTomorrow": tomorrow]); dismiss() }
         catch { self.error = error.localizedDescription }
     }
 }
@@ -280,6 +282,19 @@ struct DiagnosticsView: View {
                             Text(call.startedAt, style: .date).font(.caption)
                             if let delay = call.arrivalDelaySeconds { Text(String(format: "요청에서 앱 수신까지 %.1f초", delay)).font(.caption) }
                             Text(call.voiceConnectedAt == nil ? "음성 연결 기록 없음" : "WebRTC 연결 기록 있음 · 실제 들리는지는 실기기 시험 필요").font(.caption).foregroundStyle(.secondary)
+                            if let answered = call.answeredAt, let connected = call.voiceConnectedAt {
+                                Text(String(format: "받기 → WebRTC 준비 %.1f초", max(0, connected.timeIntervalSince(answered)))).font(.caption)
+                            }
+                            if let answered = call.answeredAt, let output = call.firstOutputTranscriptAt {
+                                Text(String(format: "받기 → 첫 AI 발화 신호 %.1f초", max(0, output.timeIntervalSince(answered)))).font(.caption)
+                            }
+                            if let output = call.firstOutputTranscriptAt, let reply = call.firstUserReplyAt {
+                                Text(String(format: "첫 AI 발화 신호 → 첫 사용자 발화 신호 %.1f초", max(0, reply.timeIntervalSince(output)))).font(.caption)
+                            }
+                            if let answered = call.answeredAt, let packet = call.firstRemoteAudioPacketAt {
+                                Text(String(format: "받기 → 첫 원격 음성 패킷 %.1f초", max(0, packet.timeIntervalSince(answered)))).font(.caption)
+                                Text("음성 패킷 수신은 스피커에서 들렸다는 증거가 아니에요.").font(.caption2).foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
