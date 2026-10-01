@@ -14,6 +14,7 @@ public enum InterventionPolicy {
         state.day = today
         state.ledgers = [:]
         state.knownApps = state.apps
+        state.freshUsageTest = nil
         if state.preferences.pausedDay != today { state.preferences.pausedDay = nil }
         // Preserve an actual call spanning midnight and its result history.
         state.attempts = Array(state.attempts.suffix(200))
@@ -113,6 +114,33 @@ public enum InterventionPolicy {
     public static func pauseToday(_ state: inout SharedState, now: Date, calendar: Calendar = .current) {
         rollDay(&state, now: now, calendar: calendar)
         state.preferences.pausedDay = state.day
+    }
+
+    public static func handleFreshUsageTest(_ state: inout SharedState, testID: UUID, now: Date,
+                                            approvalGranted: Bool, calendar: Calendar = .current) -> DetectionDecision {
+        rollDay(&state, now: now, calendar: calendar)
+        guard var test = state.freshUsageTest, test.id == testID,
+              state.apps.contains(where: { $0.id == test.appID }) else { return .skip("fresh_test_not_armed") }
+        let decision: DetectionDecision
+        if test.requestedCallID != nil { decision = .skip("fresh_test_duplicate") }
+        else if now.timeIntervalSince(test.startedAt) > 30 * 60 { decision = .skip("fresh_test_expired") }
+        else if !state.screenTimeAuthorized { decision = .skip("permission_unavailable") }
+        else if !approvalGranted { decision = .skip("local_only_apple_approval_pending") }
+        else if state.activeCallID != nil && (state.busyUntil == nil || state.busyUntil! > now) {
+            decision = .skip("busy")
+        } else {
+            let id = UUID()
+            test.requestedCallID = id
+            state.freshUsageTest = test
+            state.activeCallID = id
+            state.busyUntil = now.addingTimeInterval(60)
+            decision = .request(id)
+        }
+        let label: String
+        switch decision { case .request: label = "fresh_test_request_reserved"; case .skip(let reason): label = reason }
+        state.detections.append(LocalDetection(id: UUID(), appID: test.appID, at: now, kind: .first, result: label))
+        state.detections = Array(state.detections.suffix(100))
+        return decision
     }
 
     public static func resumeToday(_ state: inout SharedState, now: Date, calendar: Calendar = .current) {

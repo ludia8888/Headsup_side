@@ -12,6 +12,22 @@ final class ActivityMonitor: DeviceActivityMonitor {
     }
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
         super.eventDidReachThreshold(event, activity: activity)
+        #if DEBUG
+        if let testID = ScreenTimeScheduler.parseFresh(event) {
+            let now = Date()
+            do {
+                let decision = try SharedResources.store().update { state in
+                    InterventionPolicy.handleFreshUsageTest(&state, testID: testID, now: now,
+                        approvalGranted: SharedResources.automaticDispatchApproved)
+                }
+                if case .request(let id) = decision { MonitorDispatcher.shared.dispatch(callID: id, at: now, mode: "testPush") }
+            } catch {
+                NSLog("Jimin fresh-usage test could not update its local record.")
+            }
+            DeviceActivityCenter().stopMonitoring([activity])
+            return
+        }
+        #endif
         guard let (appID, kind) = ScreenTimeScheduler.parse(event) else { return }
         let now = Date()
         do {

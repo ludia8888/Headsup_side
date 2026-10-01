@@ -109,6 +109,17 @@ public struct LocalDetection: Codable, Identifiable, Sendable {
     public let result: String
 }
 
+/// A one-off Debug device test. It does not alter the normal daily call ledger.
+public struct FreshUsageTest: Codable, Equatable, Sendable {
+    public let id: UUID
+    public let appID: UUID
+    public let startedAt: Date
+    public var requestedCallID: UUID?
+    public init(id: UUID = UUID(), appID: UUID, startedAt: Date = Date()) {
+        self.id = id; self.appID = appID; self.startedAt = startedAt
+    }
+}
+
 public struct SharedState: Codable, Sendable {
     public var preferences = AppPreferences()
     public var apps: [MonitoredApp] = []
@@ -117,6 +128,7 @@ public struct SharedState: Codable, Sendable {
     public var ledgers: [String: AppDayLedger] = [:]
     public var attempts: [CallAttempt] = []
     public var detections: [LocalDetection] = []
+    public var freshUsageTest: FreshUsageTest?
     public var activeCallID: UUID?
     public var busyUntil: Date?
     public var screenTimeAuthorized = false

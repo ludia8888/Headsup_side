@@ -181,9 +181,16 @@ import os
             localPolicyAllowsPush = false
             #endif
         } else if isVoIP, let state = try? SharedResources.store().read() {
-            localPolicyAllowsPush = SharedResources.automaticDispatchApproved && state.preferences.onboardingComplete &&
+            #if DEBUG
+            let explicitlyArmedFreshTest = SharedResources.automaticDispatchApproved &&
+                state.freshUsageTest?.requestedCallID == id && state.screenTimeAuthorized &&
+                AuthorizationCenter.shared.authorizationStatus != .denied
+            #else
+            let explicitlyArmedFreshTest = false
+            #endif
+            localPolicyAllowsPush = explicitlyArmedFreshTest || (SharedResources.automaticDispatchApproved && state.preferences.onboardingComplete &&
                 state.preferences.proactiveEnabled && state.preferences.pausedDay != InterventionPolicy.dayKey(Date()) &&
-                state.screenTimeAuthorized && AuthorizationCenter.shared.authorizationStatus != .denied
+                state.screenTimeAuthorized && AuthorizationCenter.shared.authorizationStatus != .denied)
         } else { localPolicyAllowsPush = !isVoIP }
         if !duplicate && !otherCall {
             model?.stopPreview()

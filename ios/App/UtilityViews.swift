@@ -46,6 +46,37 @@ struct ConnectionView: View {
                          ? "누르면 약 8초 뒤 실제 인터넷 전화가 와요. 앱 사용 시간은 전송하지 않아요. 잠금 화면을 보려면 안내가 뜬 뒤 iPhone을 잠가 주세요."
                          : "먼저 아래 ‘시험 서버 연결하기’에서 이 지민 앱을 연결해 주세요. 이전 ‘지민 통화 시험’ 앱의 연결은 자동으로 옮겨지지 않아요.")
                         .font(.caption).foregroundStyle(Palette.muted).lineSpacing(3)
+                    if SharedResources.automaticDispatchApproved && model.backendConnected {
+                        SectionHeading(title: "새 사용 1분 시험", detail: "오늘 이미 쓴 시간은 빼고, 지금부터 선택한 앱을 1분 더 볼 때 전화가 오는지 확인해요. ‘오늘은 쉬기’ 설정은 바꾸지 않아요.")
+                        if model.state.apps.isEmpty {
+                            InlineNotice(title: "먼저 설정에서 앱을 선택해 주세요.", icon: "apps.iphone")
+                        } else {
+                            Surface {
+                                VStack(spacing: 8) {
+                                    ForEach(model.state.apps) { app in
+                                        if let token = ScreenTimeScheduler.token(app) {
+                                            Button {
+                                                _ = model.startFreshUsageTest(for: app.id)
+                                            } label: {
+                                                HStack {
+                                                    Label(token).labelStyle(.titleAndIcon)
+                                                    Spacer()
+                                                    Text("1분 시험 시작").font(.caption.weight(.semibold)).foregroundStyle(Palette.rose)
+                                                }.frame(minHeight: 48)
+                                            }.disabled(model.calls.isBusy || calls.pushRegistrationPhase != .registered ||
+                                                       !model.state.screenTimeAuthorized)
+                                            if app.id != model.state.apps.last?.id { Divider() }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if let test = model.state.freshUsageTest {
+                            InlineNotice(title: test.requestedCallID == nil ? "새 사용 1분 감지 중" : "1분 감지 완료 · 전화 요청함",
+                                         detail: "선택한 앱을 지금부터 1분 이상 화면에 띄워 두세요. 일반 하루 한도·통화 횟수는 바꾸지 않아요.",
+                                         icon: "timer")
+                        }
+                    }
                     #endif
                     if model.backendConnected {
                         SecondaryButton(title: model.checkingConnection ? "연결 확인 중" : "연결 다시 확인", icon: "arrow.clockwise") {

@@ -116,6 +116,35 @@ final class PolicyTests: XCTestCase {
         XCTAssertTrue(s.ledgers[s.apps[0].id.uuidString]!.firstObserved)
         XCTAssertEqual(threshold(&s, at: now.addingTimeInterval(81)), .skip("duplicate_threshold"))
     }
+    func testFreshUsageTestRequestsOnceWithoutResettingDailyHistory() {
+        var s = fixture(); let normal = requestID(threshold(&s))
+        finish(&s, id: normal, outcome: .ended)
+        let ledger = s.ledgers[s.apps[0].id.uuidString]
+        let test = FreshUsageTest(appID: s.apps[0].id, startedAt: now.addingTimeInterval(60))
+        s.freshUsageTest = test
+        let call = requestID(InterventionPolicy.handleFreshUsageTest(&s, testID: test.id,
+            now: now.addingTimeInterval(121), approvalGranted: true, calendar: calendar))
+        XCTAssertEqual(s.freshUsageTest?.requestedCallID, call)
+        XCTAssertEqual(s.ledgers[s.apps[0].id.uuidString], ledger)
+        XCTAssertEqual(s.attempts.map(\.id), [normal])
+        XCTAssertEqual(InterventionPolicy.handleFreshUsageTest(&s, testID: test.id,
+            now: now.addingTimeInterval(122), approvalGranted: true, calendar: calendar), .skip("fresh_test_duplicate"))
+    }
+    func testExplicitFreshUsageTestWorksDuringPauseButStillNeedsApproval() throws {
+        var s = fixture(); let test = FreshUsageTest(appID: s.apps[0].id, startedAt: now)
+        s.freshUsageTest = test
+        InterventionPolicy.pauseToday(&s, now: now, calendar: calendar)
+        XCTAssertEqual(InterventionPolicy.handleFreshUsageTest(&s, testID: test.id,
+            now: now.addingTimeInterval(61), approvalGranted: false, calendar: calendar), .skip("local_only_apple_approval_pending"))
+        XCTAssertNil(s.freshUsageTest?.requestedCallID)
+        XCTAssertNotNil(requestID(InterventionPolicy.handleFreshUsageTest(&s, testID: test.id,
+            now: now.addingTimeInterval(62), approvalGranted: true, calendar: calendar)))
+        XCTAssertEqual(s.preferences.pausedDay, s.day)
+        var old = try JSONSerialization.jsonObject(with: JSONEncoder().encode(fixture())) as! [String: Any]
+        old.removeValue(forKey: "freshUsageTest")
+        let decoded = try JSONDecoder().decode(SharedState.self, from: JSONSerialization.data(withJSONObject: old))
+        XCTAssertNil(decoded.freshUsageTest)
+    }
     func testMidnightPreservesAnOngoingCallAndHistory() {
         var s = fixture(); let id = requestID(threshold(&s)); finish(&s, id: id, outcome: .voiceConnected)
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!

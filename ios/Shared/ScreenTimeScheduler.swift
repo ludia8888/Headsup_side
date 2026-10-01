@@ -17,6 +17,31 @@ enum ScreenTimeScheduler {
     static func retryName(_ id: UUID) -> DeviceActivityName { DeviceActivityName("jimin.retry.\(id.uuidString)") }
     static func token(_ app: MonitoredApp) -> ApplicationToken? { try? JSONDecoder().decode(ApplicationToken.self, from: app.tokenData) }
 
+    #if DEBUG
+    static func freshActivity(_ id: UUID) -> DeviceActivityName { DeviceActivityName("jimin.fresh.\(id.uuidString)") }
+    static func freshEvent(_ id: UUID) -> DeviceActivityEvent.Name { DeviceActivityEvent.Name("fresh.\(id.uuidString)") }
+    static func parseFresh(_ event: DeviceActivityEvent.Name) -> UUID? {
+        let parts = event.rawValue.split(separator: ".")
+        guard parts.count == 2, parts[0] == "fresh" else { return nil }
+        return UUID(uuidString: String(parts[1]))
+    }
+    static func armFreshUsageTest(_ test: FreshUsageTest, state: SharedState) throws {
+        guard state.screenTimeAuthorized,
+              let app = state.apps.first(where: { $0.id == test.appID }),
+              let appToken = token(app) else {
+            throw NSError(domain: "Jimin", code: 2, userInfo: [NSLocalizedDescriptionKey: "선택한 앱의 사용 시간 권한을 확인해 주세요."])
+        }
+        let calendar = Calendar.current
+        var start = calendar.dateComponents([.year, .month, .day], from: test.startedAt)
+        start.hour = 0; start.minute = 0; start.second = 0
+        var end = start; end.hour = 23; end.minute = 59; end.second = 59
+        try DeviceActivityCenter().startMonitoring(freshActivity(test.id),
+            during: DeviceActivitySchedule(intervalStart: start, intervalEnd: end, repeats: false),
+            events: [freshEvent(test.id): DeviceActivityEvent(applications: [appToken],
+                threshold: DateComponents(minute: 1), includesPastActivity: false)])
+    }
+    #endif
+
     static func replaceFirstThresholds(_ state: SharedState) throws {
         let center = DeviceActivityCenter()
         guard state.screenTimeAuthorized, !state.apps.isEmpty else {

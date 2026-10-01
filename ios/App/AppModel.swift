@@ -91,6 +91,31 @@ import JiminCore
             if let j = state.knownApps.firstIndex(where: { $0.id == id }) { state.knownApps[j] = state.apps[i] }
         } }, schedule: true, sync: false)
     }
+    #if DEBUG
+    func startFreshUsageTest(for appID: UUID) -> Bool {
+        guard SharedResources.automaticDispatchApproved, backendConnected,
+              calls.pushRegistrationPhase == .registered,
+              state.screenTimeAuthorized, !calls.isBusy,
+              state.apps.contains(where: { $0.id == appID }) else {
+            errorMessage = "먼저 전화·사용 시간 권한과 시험 서버 연결을 확인해 주세요."
+            return false
+        }
+        let test = FreshUsageTest(appID: appID)
+        if let old = state.freshUsageTest { DeviceActivityCenter().stopMonitoring([ScreenTimeScheduler.freshActivity(old.id)]) }
+        do {
+            state = try SharedResources.store().update { state in state.freshUsageTest = test; return state }
+            try ScreenTimeScheduler.armFreshUsageTest(test, state: state)
+            return true
+        } catch {
+            state = (try? SharedResources.store().update { state in
+                if state.freshUsageTest?.id == test.id { state.freshUsageTest = nil }
+                return state
+            }) ?? state
+            errorMessage = "새 사용 1분 시험을 시작하지 못했어요. \(error.localizedDescription)"
+            return false
+        }
+    }
+    #endif
     func applySelection() {
         guard selection.applicationTokens.count <= 10 else {
             errorMessage = "첫 시험에서는 앱을 최대 10개까지 골라 주세요."; refresh(); return

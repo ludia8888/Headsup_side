@@ -16,7 +16,7 @@ final class MonitorDispatcher: NSObject, URLSessionTaskDelegate {
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
     func resume() { _ = session }
-    func dispatch(callID: UUID, at: Date) {
+    func dispatch(callID: UUID, at: Date, mode: String = "automatic") {
         guard SharedResources.automaticDispatchApproved else { return }
         do {
             guard let connection = try SecureConnectionStore.read() else { throw DispatchError.noConnection }
@@ -24,7 +24,7 @@ final class MonitorDispatcher: NSObject, URLSessionTaskDelegate {
             let folder = store.directory.appendingPathComponent("Transfers")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let file = folder.appendingPathComponent(callID.uuidString + ".json")
-            let body: [String: Any] = ["requestId": callID.uuidString, "mode": "automatic",
+            let body: [String: Any] = ["requestId": callID.uuidString, "mode": mode,
                 "createdAt": ISO8601DateFormatter().string(from: at)]
             try JSONSerialization.data(withJSONObject: body).write(to: file, options: .atomic)
             var request = URLRequest(url: connection.baseURL.appendingPathComponent("v1/calls"))
