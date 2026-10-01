@@ -142,11 +142,12 @@ test("session creation uses GPT-Live JSON WebRTC and keeps the API key on the se
     const sent = JSON.parse(init?.body as string);
     assert.equal(sent.session.model, "gpt-live-1");
     assert.equal(sent.session.delegation.responses.model, "gpt-6-luna");
-    assert.equal(sent.transport.type, "webrtc"); assert.equal(sent.transport.sdp, "v=0");
+    assert.equal(sent.transport.type, "webrtc"); assert.equal(sent.transport.sdp, "v=0\r\n");
     assert.equal(JSON.stringify(sent).includes(c.openaiApiKey), false);
     return Response.json({ session: { id: "live_test_123" }, transport: { type: "webrtc", sdp: "v=0\r\na=answer" } }, { status: 201 });
   });
   assert.deepEqual(await p.session("v=0", defaultProfile(), randomUUID()), { sdp: "v=0\r\na=answer", sessionId: "live_test_123" });
+  assert.deepEqual(await p.session("v=0\r\n", defaultProfile(), randomUUID()), { sdp: "v=0\r\na=answer", sessionId: "live_test_123" });
 });
 test("final GPT-Live usage is recorded once for the owning device", async () => {
   const f = await fixture(); try {

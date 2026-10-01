@@ -32,8 +32,13 @@ export function providers(config: Config, request: typeof fetch = fetch): Provid
       });
     } catch { throw new ProviderError("openai_connection_failed"); }
     if (!response.ok) {
-      // Never log upstream request bodies, user memories or authorization headers.
-      await response.arrayBuffer(); throw new ProviderError(`openai_http_${response.status}`);
+      // Keep enough upstream metadata to diagnose a failed voice session without
+      // logging SDP, prompts, memories, API keys, or an echoed error message.
+      const error = await response.json().catch(() => null) as { error?: { type?: unknown; code?: unknown; param?: unknown } } | null;
+      const safeField = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9_.-]{1,80}$/.test(value) ? value : undefined;
+      console.error("OpenAI request failed", JSON.stringify({ path, status: response.status,
+        type: safeField(error?.error?.type), code: safeField(error?.error?.code), param: safeField(error?.error?.param) }));
+      throw new ProviderError(`openai_http_${response.status}`);
     }
     return response;
   };
@@ -69,17 +74,39 @@ export function providers(config: Config, request: typeof fetch = fetch): Provid
       });
     },
     async session(offer, profile, deviceId, conversation) {
-      const response = await openai("live/sessions", { method: "POST",
-        headers: { "Content-Type": "application/json", "OpenAI-Safety-Identifier": createHash("sha256").update(deviceId).digest("hex") },
-        body: JSON.stringify({ session: sessionConfig(profile, config.liveModel, config.backendModel, conversation),
-          transport: { type: "webrtc", sdp: offer } }) });
+      // Native WebRTC's localDescription can omit the final CRLF. GPT-Live's
+      // SDP parser rejects that otherwise valid offer with invalid_offer/EOF.
+      const normalizedOffer = offer.replace(/[\r\n]+$/, "") + "\r\n";
+      let response: Response;
+      try {
+        response = await openai("live/sessions", { method: "POST",
+          headers: { "Content-Type": "application/json", "OpenAI-Safety-Identifier": createHash("sha256").update(deviceId).digest("hex") },
+          body: JSON.stringify({ session: sessionConfig(profile, config.liveModel, config.backendModel, conversation),
+            transport: { type: "webrtc", sdp: normalizedOffer } }) });
+      } catch (error) {
+        if (error instanceof ProviderError && error.code === "openai_http_400") {
+          const lines = offer.split(/\r?\n/);
+          console.error("Live offer summary", JSON.stringify({ length: offer.length,
+            media: lines.filter(line => line.startsWith("m=")).map(line => line.split(" ").slice(0, 2).join(" ")),
+            hasFingerprint: lines.some(line => line.startsWith("a=fingerprint:")),
+            hasIceUfrag: lines.some(line => line.startsWith("a=ice-ufrag:")),
+            candidateCount: lines.filter(line => line.startsWith("a=candidate:")).length }));
+        }
+        throw error;
+      }
       let result: { session?: { id?: unknown }; transport?: { type?: unknown; sdp?: unknown } };
       try { result = await response.json() as typeof result; }
-      catch { throw new ProviderError("openai_invalid_session"); }
+      catch { console.error("OpenAI live session response was not JSON"); throw new ProviderError("openai_invalid_session"); }
       const sessionId = result.session?.id;
       const sdp = result.transport?.sdp;
       if (typeof sessionId !== "string" || !/^[A-Za-z0-9_-]{4,128}$/.test(sessionId) ||
           result.transport?.type !== "webrtc" || typeof sdp !== "string" || !sdp.startsWith("v=0")) {
+        console.error("OpenAI live session response shape was invalid", JSON.stringify({
+          sessionIdType: typeof sessionId, sessionIdLength: typeof sessionId === "string" ? sessionId.length : undefined,
+          sessionIdAccepted: typeof sessionId === "string" && /^[A-Za-z0-9_-]{4,128}$/.test(sessionId),
+          transportType: result.transport?.type, answerType: typeof sdp,
+          answerStartsWithV0: typeof sdp === "string" && sdp.startsWith("v=0")
+        }));
         if (typeof sessionId === "string" && /^[A-Za-z0-9_-]{4,128}$/.test(sessionId)) {
           await openai(`live/sessions/${encodeURIComponent(sessionId)}/hangup`, { method: "POST" }).catch(() => {});
         }
