@@ -78,6 +78,9 @@ struct SettingsView: View {
                             }
                         }
                     }.buttonStyle(PressStyle()).accessibilityLabel("캐릭터 이름, 성격과 목소리 변경")
+                    #if MANUAL_CALL_DEMO
+                    InlineNotice(title: "직접 거는 통화만 시험할 수 있어요.", detail: "앱 사용 감지와 자동 전화는 이 개발 빌드에서 사용할 수 없어요. 홈의 ‘대화하기’로 음성을 확인해 주세요.", icon: "phone.badge.waveform")
+                    #else
                     VStack(alignment: .leading, spacing: 14) {
                         SectionHeading(title: "연락의 약속")
                         Surface {
@@ -128,6 +131,7 @@ struct SettingsView: View {
                             Button { character = true } label: { SettingRow(title: "성격과 목소리", value: model.state.preferences.profile.voice.capitalized, icon: "waveform") }
                         }.buttonStyle(.plain)
                     }
+                    #endif
                     VStack(alignment: .leading, spacing: 14) {
                         SectionHeading(title: "연결과 권한")
                         Surface(padding: 16) {

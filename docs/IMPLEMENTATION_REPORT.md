@@ -13,6 +13,7 @@
 | 서버 자동 검사 | **passed** | Node 검사 **21개**, 실패 0. GPT-Live 세션 JSON/비밀키 경계·첫 질문 고정·최종 사용 초 수 소유권 검사 포함 |
 | TypeScript 검사·컴파일 | **passed** | `npm run typecheck`, `npm run build` |
 | iOS 앱 + 감지 확장 기능 | **passed** | Xcode 26.0, 시뮬레이터 SDK, iOS 최소 버전 17.4. 로컬 실행용 ad hoc 서명으로 빌드·설치. 실기기 서명 성공을 뜻하지 않음 |
+| iPhone 수동 통화 시험판 설치 | **passed / 음성 notProven** | 2026-10-01 연결된 iPhone 14 Pro / iOS 26.3에 `JiminManualDemo`를 Personal Team으로 서명·설치·실행. Family Controls·PushKit 등록·감지 확장 기능을 제외한 빌드이며, 실제 첫마디와 왕복 음성은 아직 확인 전 |
 | 서버 프로세스 기동·키 설정 | **passed** | 2026-10-01에 실제 `/health` 응답에서 `model: gpt-live-1`, `backendModel: gpt-6-luna`, `voiceConfigured: true`, `pushConfigured: false`, `automaticApproved: false` 확인. 비공개 설정 화면에서 두 모델의 조회 인증 성공을 확인. 서버 8787 실행. 키 파일 권한은 소유자 전용 `600`이며 Git에서 제외됨 |
 | 앱의 서버 등록·인증·수동 수신 | **passed** | 로컬 연결 요청 → Keychain 저장 → 앱 재실행 → 캐릭터 설정 동기화 → 실제 서버 수동 통화 요청 → 시뮬레이터 앱 안 수신·받기 확인 |
 | 시뮬레이터 GPT-Live 신호 연결 | **passed** | 2026-10-01 진단 통화에서 서버 `sessionCreated: true`, WebRTC 연결과 `session.started` 뒤 `voiceConnectedAt` 기록, 정상 종료 확인. 소리가 실제로 들렸는지는 별도 |

@@ -12,7 +12,11 @@ struct OnboardingView: View {
     @State private var skipDetection = false
     @State private var picker = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    #if MANUAL_CALL_DEMO
+    private let titles = ["어떤 나와\n함께하고 싶어?", "먼저 직접\n통화해 볼까?", "사용 시간 설정은\n나중에 해도 돼.", "오늘은 네가\n전화를 걸어줘.", "목소리로 만나기 전,\n이것만 부탁할게.", "첫 전화,\n받아볼래?"]
+    #else
     private let titles = ["어떤 나와\n함께하고 싶어?", "언제 내가\n불러줄까?", "우리의 기준을\n정해볼까?", "오래 보고 있으면,\n전화해도 돼?", "목소리로 만나기 전,\n이것만 부탁할게.", "첫 전화,\n받아볼래?"]
+    #endif
     private let labels = ["캐릭터", "앱 선택", "하루 한도", "연락의 약속", "권한", "첫 통화"]
     var body: some View {
         NavigationStack {
@@ -52,7 +56,11 @@ struct OnboardingView: View {
     private var canContinue: Bool {
         switch step {
         case 0: return adult && !model.state.preferences.profile.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        #if MANUAL_CALL_DEMO
+        case 1, 2: return true
+        #else
         case 1, 2: return !model.state.apps.isEmpty || skipDetection
+        #endif
         case 3: return promise
         default: return true
         }
@@ -78,6 +86,9 @@ struct OnboardingView: View {
             if let status = model.sampleStatus { InlineNotice(title: status, icon: "speaker.wave.2") }
             Toggle("만 18세 이상이에요", isOn: $adult).font(.subheadline).tint(Palette.rose).padding(.vertical, 4)
         case 1:
+            #if MANUAL_CALL_DEMO
+            InlineNotice(title: "iPhone 통화 시험판", detail: "이번 설치에서는 ‘대화하기’를 누르면 지민과 실제 AI 음성 통화를 시험할 수 있어요. 앱 사용 감지와 자동 전화는 아직 사용할 수 없어요.", icon: "phone.badge.waveform")
+            #else
             Text("네가 고른 앱을 오래 보면 알아차릴게.\n무엇을 보고 있는지까지는 알 수 없어.").font(.body).lineSpacing(5)
             Surface {
                 VStack(alignment: .leading, spacing: 16) {
@@ -94,7 +105,11 @@ struct OnboardingView: View {
             #if targetEnvironment(simulator)
             InlineNotice(title: "앱 선택은 실제 아이폰에서 시험해 주세요.", detail: "시뮬레이터에서는 사용 시간 감지를 확인할 수 없어요.")
             #endif
+            #endif
         case 2:
+            #if MANUAL_CALL_DEMO
+            InlineNotice(title: "이번에는 한도를 정하지 않아요.", detail: "직접 거는 통화가 잘 들리는지 먼저 확인해요. 사용 시간 설정은 정식 권한을 갖춘 빌드에서 시험할 수 있어요.", icon: "clock")
+            #else
             Text("앱마다 하루 30분부터 시작할까?\n너에게 맞는 시간으로 바꿔도 좋아.").font(.body).lineSpacing(5)
             ForEach(model.state.apps) { app in Surface { AppBudgetRow(app: app) } }
             if model.state.apps.isEmpty {
@@ -102,20 +117,29 @@ struct OnboardingView: View {
             }
             Text("중간에 쉬어도 하루 동안 사용한 시간을 합쳐요. 자정에 새로 시작하며, 한도를 바꿔도 오늘의 사용 기록은 유지해요.")
                 .font(.subheadline).foregroundStyle(Palette.muted).lineSpacing(4)
+            #endif
         case 3:
             CharacterAvatar(size: 110).frame(maxWidth: .infinity).padding(.vertical, 8)
             Surface {
                 VStack(alignment: .leading, spacing: 18) {
+                    #if MANUAL_CALL_DEMO
+                    Text("“네가 부르면 내가 받을게.\n이번 통화의 첫마디는 깜짝 질문이야.”").font(.title3.weight(.medium)).lineSpacing(6)
+                    Divider()
+                    Toggle("직접 통화를 시험해 볼게", isOn: $promise).font(.body.weight(.semibold)).tint(Palette.rose)
+                    #else
                     Text("“오래 보고 있으면 내가 전화할게.\n무슨 얘기를 할지는 그때의 깜짝 질문.\n우리, 잠깐 딴 얘기 하자.”").font(.title3.weight(.medium)).lineSpacing(6)
                     Divider()
                     Toggle("응, 먼저 전화해 줘", isOn: $promise).font(.body.weight(.semibold)).tint(Palette.rose)
+                    #endif
                 }
             }
+            #if !MANUAL_CALL_DEMO
             Text("정한 한도에 닿으면 매번 다른 이야기로 연락해요. 못 받으면 같은 앱을 조금 더 사용했을 때 한 번만 다시 연락해요.")
                 .font(.subheadline).foregroundStyle(Palette.muted).lineSpacing(4)
             Text("언제든 끌 수 있어요. 오늘만 쉬거나, 통화 중에 ‘오늘은 연락하지 마’라고 말해도 괜찮아요.")
                 .font(.subheadline).foregroundStyle(Palette.muted).lineSpacing(4)
             if !SharedResources.automaticDispatchApproved { InlineNotice(title: "지금은 약속을 저장해 둘게요.", detail: "자동 전화는 Apple 확인 전까지 잠겨 있어요.") }
+            #endif
         case 4:
             Surface {
                 VStack(spacing: 22) {

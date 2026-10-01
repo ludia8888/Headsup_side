@@ -29,7 +29,10 @@ targets:
   Jimin:
     type: application
     platform: iOS
-    sources: [App, Shared]
+    sources:
+      - path: App
+        excludes: [ManualDemo-Info.plist]
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jimin.mvp
@@ -52,8 +55,34 @@ targets:
         APPLICATION_EXTENSION_API_ONLY: YES
     dependencies:
       - package: JiminCore
+  JiminManualDemo:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: [Info.plist]
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ludia8888.headsup.jimin.manual
+        INFOPLIST_FILE: App/ManualDemo-Info.plist
+        CODE_SIGN_STYLE: Automatic
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG MANUAL_CALL_DEMO"
+        Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) MANUAL_CALL_DEMO"
+    dependencies:
+      - package: JiminCore
+      - package: WebRTC
 schemes:
   Jimin:
     build:
       targets:
         Jimin: all
+  JiminManualDemo:
+    build:
+      targets:
+        JiminManualDemo: all
+    run:
+      config: Debug

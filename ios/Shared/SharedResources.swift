@@ -6,10 +6,10 @@ enum SharedResources {
     static let group = "group.com.jimin.mvp"
     static let transferIdentifier = "com.jimin.mvp.monitor-transfer"
     static func store() throws -> LockedStateStore {
-        #if targetEnvironment(simulator)
+        #if targetEnvironment(simulator) || MANUAL_CALL_DEMO
         // Keep simulator preferences in the same container when switching between
-        // unsigned and locally signed builds. Real Screen Time extensions use the
-        // signed App Group on an actual iPhone.
+        // unsigned and locally signed builds. The manual-call iPhone demo has no
+        // Screen Time extension, so it also uses its own private app container.
         return LockedStateStore(directory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Jimin"))
         #else
         if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) {
@@ -39,7 +39,7 @@ enum SecureConnectionStore {
     private static var query: [String: Any] {
         var q: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
                                kSecAttrService as String: service, kSecAttrAccount as String: "device"]
-        #if !targetEnvironment(simulator)
+        #if !targetEnvironment(simulator) && !MANUAL_CALL_DEMO
         // The prefix is read from the signed entitlements via an expanded Info.plist value.
         if let group = Bundle.main.object(forInfoDictionaryKey: "KeychainGroup") as? String, !group.isEmpty {
             q[kSecAttrAccessGroup as String] = group

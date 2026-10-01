@@ -80,6 +80,10 @@ struct AIHomeView: View {
                         }
                         VStack(spacing: 22) {
                             callAction
+                            #if MANUAL_CALL_DEMO
+                            Text("수동 통화 시험판 · 자동 전화와 앱 사용 감지는 꺼져 있어요")
+                                .font(.caption).foregroundStyle(Palette.muted).multilineTextAlignment(.center)
+                            #endif
                             if let recent = model.state.callHistory.first {
                                 HStack(spacing: 10) {
                                     Image(systemName: recent.voiceConnectedAt == nil ? "phone.arrow.down.left" : "phone.fill")

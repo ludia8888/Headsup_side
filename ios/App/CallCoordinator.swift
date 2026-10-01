@@ -54,8 +54,10 @@ import JiminCore
         RTCAudioSession.sharedInstance().isAudioEnabled = false
     }
     func start() {
+        #if !MANUAL_CALL_DEMO
         let registry = PKPushRegistry(queue: .main); registry.delegate = self
         registry.desiredPushTypes = [.voIP]; self.registry = registry
+        #endif
     }
     func reconcileInterruptedCall() {
         guard !isBusy, let state = try? SharedResources.store().read(), let id = state.activeCallID,

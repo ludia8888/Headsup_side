@@ -9,25 +9,42 @@
 /* Begin PBXBuildFile section */
 		0209CB371896ACEA9257D0EB /* MonitorDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007593F7150FC67A97B69AB /* MonitorDispatcher.swift */; };
 		092784FBCE1517CE881E1AD9 /* CallCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3BB6F091EB9F86E4599B944 /* CallCoordinator.swift */; };
+		0A819BF5D620913D982AD9CF /* MonitorDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007593F7150FC67A97B69AB /* MonitorDispatcher.swift */; };
+		0AD261580ADE859D0E3275CE /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA14402FBB11518845BF43E /* Views.swift */; };
+		0CDBF3EAFB63E83F88076D25 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8F01F41F1093ACDCC7DBDB /* OnboardingView.swift */; };
 		1064D816CD1C51D5EDA45FDE /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA14402FBB11518845BF43E /* Views.swift */; };
+		1C146CC9300C785E633ED8E3 /* RealtimeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C098E484AFFDEC90A21C9CCC /* RealtimeTransport.swift */; };
+		1EF87B8E91BDE0634C134C18 /* BackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E7FA5F5FD43F369704DB42 /* BackendClient.swift */; };
+		1FA169467881FFAE6BE6556A /* UtilityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AEEE247FB3F17E596C6A038 /* UtilityViews.swift */; };
 		20897770DF18E05CD0AAD989 /* SharedResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220CEFBD829698940C4170C0 /* SharedResources.swift */; };
 		31EE7DE789FA47A723AE24A9 /* ActivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82C05A47DB42BCFE04C4C43D /* ActivityMonitor.swift */; };
+		3CA755B299B319AC5311E512 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B56E41030DE66A29E8CA646 /* Assets.xcassets */; };
 		41F7868D0B8A4FD09D68FA22 /* JiminCore in Frameworks */ = {isa = PBXBuildFile; productRef = 354BB01CD7FA329FFA876712 /* JiminCore */; };
+		44E83D3AD30089ADC6059649 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5FEDE399E4128F695918 /* DesignSystem.swift */; };
 		47D8EC60E4E6190130C6E898 /* ScreenTimeScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63817C3EEC4610DC6D93DBD /* ScreenTimeScheduler.swift */; };
 		48D05A22904EF727702F21FF /* UtilityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AEEE247FB3F17E596C6A038 /* UtilityViews.swift */; };
+		5B545D7D0DD166405B0032BB /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBEB792EF6F68184285CE62 /* AppModel.swift */; };
+		67D0B65B9753B2D0674261E1 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = 291428185AB5551FD093F301 /* WebRTC */; };
 		6F1FC04CA9C51F53FB05BF44 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5FEDE399E4128F695918 /* DesignSystem.swift */; };
 		7EFD22F6D2D2B513ED14F435 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBEB792EF6F68184285CE62 /* AppModel.swift */; };
+		8514E35E3B8D21E77128B606 /* TogetherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F4CA54E5B8286EED0261 /* TogetherView.swift */; };
 		87FE5CFF9F1723354A328A04 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8F01F41F1093ACDCC7DBDB /* OnboardingView.swift */; };
+		8BD3188477DAE160D52ADA46 /* JiminCore in Frameworks */ = {isa = PBXBuildFile; productRef = B061CA17F73506B3A07D57CD /* JiminCore */; };
 		8E35C729EC51326E41FAA810 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = 121A77C59E2128F4B64005F6 /* WebRTC */; };
 		92296F9EEBD468142D4600EE /* BackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E7FA5F5FD43F369704DB42 /* BackendClient.swift */; };
 		A6C4EC8A5DAF4866271F143B /* RealtimeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C098E484AFFDEC90A21C9CCC /* RealtimeTransport.swift */; };
 		A82C66EB7D4A49841A139B93 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED3F5BDE27DC09E122EF2FD /* SettingsView.swift */; };
+		B66471DFF2A24788D057E65A /* SharedResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220CEFBD829698940C4170C0 /* SharedResources.swift */; };
 		B6F2D72090D9204FB412E3FE /* JiminApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2631C68E1C727C4969F914 /* JiminApp.swift */; };
+		B75F108DFD77E55CF525B549 /* CallCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3BB6F091EB9F86E4599B944 /* CallCoordinator.swift */; };
+		B90F23A440733665F561808F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED3F5BDE27DC09E122EF2FD /* SettingsView.swift */; };
 		BAB7220E622041F567EEBA4E /* MonitorDispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007593F7150FC67A97B69AB /* MonitorDispatcher.swift */; };
 		BDD68D8C30CEF7EC75DCDE5B /* TogetherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F4CA54E5B8286EED0261 /* TogetherView.swift */; };
 		C9BC53B3086D2497E6763F51 /* ScreenTimeScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63817C3EEC4610DC6D93DBD /* ScreenTimeScheduler.swift */; };
 		E77474315B6CB1D3A6CA400C /* JiminMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DA6858964B3C89881B3EDF34 /* JiminMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EBF36D8C2DC4836485315265 /* JiminCore in Frameworks */ = {isa = PBXBuildFile; productRef = C42B00A86A1B5DEAE5AC969E /* JiminCore */; };
+		F2FF473BBD7BF0BD655AC531 /* ScreenTimeScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63817C3EEC4610DC6D93DBD /* ScreenTimeScheduler.swift */; };
+		F3E6527B6C56DE056C1C6903 /* JiminApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2631C68E1C727C4969F914 /* JiminApp.swift */; };
 		F689D78CA1A161303C994BF3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B56E41030DE66A29E8CA646 /* Assets.xcassets */; };
 		FE9BF2D9677527B0B8DB05FD /* SharedResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220CEFBD829698940C4170C0 /* SharedResources.swift */; };
 /* End PBXBuildFile section */
@@ -59,6 +76,7 @@
 /* Begin PBXFileReference section */
 		0D2631C68E1C727C4969F914 /* JiminApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JiminApp.swift; sourceTree = "<group>"; };
 		1D964EC16FB8E36A0D290968 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2005B43B60362F69AFAA8B70 /* JiminManualDemo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = JiminManualDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		220CEFBD829698940C4170C0 /* SharedResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedResources.swift; sourceTree = "<group>"; };
 		3C4D5FEDE399E4128F695918 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		3D01F4CA54E5B8286EED0261 /* TogetherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TogetherView.swift; sourceTree = "<group>"; };
@@ -67,6 +85,7 @@
 		77D7BD3DEC0B58C60EBD787F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7ED3F5BDE27DC09E122EF2FD /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		82C05A47DB42BCFE04C4C43D /* ActivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMonitor.swift; sourceTree = "<group>"; };
+		957607A952346EE6BF706DB0 /* ManualDemo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "ManualDemo-Info.plist"; sourceTree = "<group>"; };
 		9AEEE247FB3F17E596C6A038 /* UtilityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityViews.swift; sourceTree = "<group>"; };
 		A007593F7150FC67A97B69AB /* MonitorDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorDispatcher.swift; sourceTree = "<group>"; };
 		B2E7FA5F5FD43F369704DB42 /* BackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendClient.swift; sourceTree = "<group>"; };
@@ -100,6 +119,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E6D532980E520035245E246D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8BD3188477DAE160D52ADA46 /* JiminCore in Frameworks */,
+				67D0B65B9753B2D0674261E1 /* WebRTC in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -114,6 +142,7 @@
 				1D964EC16FB8E36A0D290968 /* Info.plist */,
 				E08E95DC2D7CE1D20667D6BE /* Jimin.entitlements */,
 				0D2631C68E1C727C4969F914 /* JiminApp.swift */,
+				957607A952346EE6BF706DB0 /* ManualDemo-Info.plist */,
 				DA8F01F41F1093ACDCC7DBDB /* OnboardingView.swift */,
 				C098E484AFFDEC90A21C9CCC /* RealtimeTransport.swift */,
 				7ED3F5BDE27DC09E122EF2FD /* SettingsView.swift */,
@@ -128,6 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				EF4236D6AF660E3DF31E324C /* Jimin.app */,
+				2005B43B60362F69AFAA8B70 /* JiminManualDemo.app */,
 				DA6858964B3C89881B3EDF34 /* JiminMonitor.appex */,
 			);
 			name = Products;
@@ -175,6 +205,27 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4F320B792B0A3D68A4BDAC36 /* JiminManualDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 99BDD07795E8F67FDFC0B2FE /* Build configuration list for PBXNativeTarget "JiminManualDemo" */;
+			buildPhases = (
+				DF88056487EF222AD0298AB5 /* Sources */,
+				14676D8A77625BFF10843AC3 /* Resources */,
+				E6D532980E520035245E246D /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = JiminManualDemo;
+			packageProductDependencies = (
+				B061CA17F73506B3A07D57CD /* JiminCore */,
+				291428185AB5551FD093F301 /* WebRTC */,
+			);
+			productName = JiminManualDemo;
+			productReference = 2005B43B60362F69AFAA8B70 /* JiminManualDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
 		87CB58798F54D1C867D0A440 /* JiminMonitor */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2F71EBB53D90F5367CD5B3B6 /* Build configuration list for PBXNativeTarget "JiminMonitor" */;
@@ -225,6 +276,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4F320B792B0A3D68A4BDAC36 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = 94C7D8433F873830C96797F4 /* Build configuration list for PBXProject "Jimin" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -245,12 +301,21 @@
 			projectRoot = "";
 			targets = (
 				B71EAFBFDE7DAFCA5B49F929 /* Jimin */,
+				4F320B792B0A3D68A4BDAC36 /* JiminManualDemo */,
 				87CB58798F54D1C867D0A440 /* JiminMonitor */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		14676D8A77625BFF10843AC3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3CA755B299B319AC5311E512 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		430161F564DCCCFCDA0994FA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -280,6 +345,27 @@
 				BDD68D8C30CEF7EC75DCDE5B /* TogetherView.swift in Sources */,
 				48D05A22904EF727702F21FF /* UtilityViews.swift in Sources */,
 				1064D816CD1C51D5EDA45FDE /* Views.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DF88056487EF222AD0298AB5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B545D7D0DD166405B0032BB /* AppModel.swift in Sources */,
+				1EF87B8E91BDE0634C134C18 /* BackendClient.swift in Sources */,
+				B75F108DFD77E55CF525B549 /* CallCoordinator.swift in Sources */,
+				44E83D3AD30089ADC6059649 /* DesignSystem.swift in Sources */,
+				F3E6527B6C56DE056C1C6903 /* JiminApp.swift in Sources */,
+				0A819BF5D620913D982AD9CF /* MonitorDispatcher.swift in Sources */,
+				0CDBF3EAFB63E83F88076D25 /* OnboardingView.swift in Sources */,
+				1C146CC9300C785E633ED8E3 /* RealtimeTransport.swift in Sources */,
+				F2FF473BBD7BF0BD655AC531 /* ScreenTimeScheduler.swift in Sources */,
+				B90F23A440733665F561808F /* SettingsView.swift in Sources */,
+				B66471DFF2A24788D057E65A /* SharedResources.swift in Sources */,
+				8514E35E3B8D21E77128B606 /* TogetherView.swift in Sources */,
+				1FA169467881FFAE6BE6556A /* UtilityViews.swift in Sources */,
+				0AD261580ADE859D0E3275CE /* Views.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,6 +489,24 @@
 			};
 			name = Debug;
 		};
+		76BD0DF58C138DD8DE7E7EA8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = "App/ManualDemo-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ludia8888.headsup.jimin.manual;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG MANUAL_CALL_DEMO";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		772886ABBAADCCBACA5F6105 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -491,6 +595,24 @@
 			};
 			name = Debug;
 		};
+		CC3C3097B4416D9D99AF5F55 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = "App/ManualDemo-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ludia8888.headsup.jimin.manual;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) MANUAL_CALL_DEMO";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		E48C8B87223E22258CA978F0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -525,6 +647,15 @@
 			buildConfigurations = (
 				C00F9A25337C97D387CBB248 /* Debug */,
 				43EE504411C5C3B4E919BDE1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		99BDD07795E8F67FDFC0B2FE /* Build configuration list for PBXNativeTarget "JiminManualDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76BD0DF58C138DD8DE7E7EA8 /* Debug */,
+				CC3C3097B4416D9D99AF5F55 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -564,7 +695,16 @@
 			package = C57E213093FAF0C38E2852C3 /* XCRemoteSwiftPackageReference "WebRTC" */;
 			productName = WebRTC;
 		};
+		291428185AB5551FD093F301 /* WebRTC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C57E213093FAF0C38E2852C3 /* XCRemoteSwiftPackageReference "WebRTC" */;
+			productName = WebRTC;
+		};
 		354BB01CD7FA329FFA876712 /* JiminCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JiminCore;
+		};
+		B061CA17F73506B3A07D57CD /* JiminCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = JiminCore;
 		};

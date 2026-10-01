@@ -23,7 +23,7 @@
 | 시험 | 기대 결과 | 판정 |
 |---|---|---|
 | 시뮬레이터 수동 시험 | 홈 ‘대화하기’ → 앱 안 수신 화면 → ‘받기’ → GPT-Live 세션 생성·WebRTC `session.started` 기록. 실제 왕복 소리는 별도 확인 | 신호 연결 passed, 실제 소리 notProven |
-| 실기기 수동 전경 시험 | 사용자 요청 → CallKit 수신 화면. APNs 없이도 가능 | notProven |
+| 실기기 수동 전경 시험 | `JiminManualDemo` 설치·실행 후 사용자 요청 → CallKit 수신 화면 → 실제 왕복 음성. APNs 없이 시험 | 설치·실행 passed, 수신·음성 notProven |
 | 일반 백그라운드 자동 수신 | 임계치 → 최소 신호 → APNs → CallKit을 순서별로 기록 | blocked |
 | 앱 강제 종료 상태 | 일반 백그라운드와 별도 측정. 도착하지 않으면 실패로 기록 | blocked |
 | 두 앱이 거의 동시에 한도 초과 | 한 통화만 진행. 추가 이벤트를 나중에 몰아서 전화하지 않음 | blocked |
